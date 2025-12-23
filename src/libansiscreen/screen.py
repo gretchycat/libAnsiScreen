@@ -262,3 +262,20 @@ class Screen:
     def cut(self, box=None):
         from libansiscreen.screen_ops.cut import cut
         return cut(self, box)
+
+    def colorize(
+        screen,
+        gradient,
+        *,
+        mode: str = "hgrad",
+        foreground: bool = True,
+        background: bool = False,
+        only_if_set: bool = True,
+        tint: Optional[float] = None,
+        direction: str = "tlbr"):
+        from libencodescreen.screen_ops.colorize import colorize
+        return colorize(screen, gradient, mode=mode, foreground=foreground,
+                          background=background, only_if_set=only_if_set,
+                          tint=tint, direction=direction)
+
+
