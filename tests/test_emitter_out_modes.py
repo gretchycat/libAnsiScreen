@@ -11,6 +11,16 @@ from libansiscreen.color.palette import (
     create_ansi_256_palette,
 )
 
+from pathlib import Path
+OUT = Path("out")
+OUT.mkdir(exist_ok=True)
+def emit( name: str, ansi):
+    path = OUT / name
+    path.write_text(ansi)
+    print(f"Wrote {path}")
+
+
+
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
@@ -41,23 +51,23 @@ def write(name: str, data: str):
 def render_all(screen: Screen):
     # Modern (auto / truecolor where needed)
     emitter = ANSIEmitter()
-    write(f"{OUTPUT_BASE}.modern.ans", emitter.emit(screen))
+    emit(f"{OUTPUT_BASE}.modern.ans", emitter.emit(screen))
 
     # ANSI 256
     emitter = ANSIEmitter(palette=create_ansi_256_palette())
-    write(f"{OUTPUT_BASE}.ansi256.ans", emitter.emit(screen))
+    emit(f"{OUTPUT_BASE}.ansi256.ans", emitter.emit(screen))
 
     # ANSI 16
     emitter = ANSIEmitter(palette=create_ansi_16_palette())
-    write(f"{OUTPUT_BASE}.ansi16.ans", emitter.emit(screen))
+    emit(f"{OUTPUT_BASE}.ansi16.ans", emitter.emit(screen))
 
     # DOS
     emitter = ANSIEmitter(dos_mode=True)
-    write(f"{OUTPUT_BASE}.dos.ans", emitter.emit(screen))
+    emit(f"{OUTPUT_BASE}.dos.ans", emitter.emit(screen))
 
     # DOS + ICE
     emitter = ANSIEmitter(dos_mode=True, ice_mode=True)
-    write(f"{OUTPUT_BASE}.dos_ice.ans", emitter.emit(screen))
+    emit(f"{OUTPUT_BASE}.dos_ice.ans", emitter.emit(screen))
 
 # ------------------------------------------------------------
 # Main

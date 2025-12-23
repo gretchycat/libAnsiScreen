@@ -8,6 +8,16 @@ from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 from libansiscreen.screen_ops.copy import copy as screen_copy
 from libansiscreen.screen_ops.clear import clear as screen_clear
 from libansiscreen.screen_ops.paste import paste as screen_paste
+from pathlib import Path
+OUT = Path("out")
+OUT.mkdir(exist_ok=True)
+
+def emit(screen: Screen, name: str):
+    ansi = ANSIEmitter().emit(screen)
+    path = OUT / name
+    path.write_text(ansi)
+    print(f"Wrote {path}")
+
 
 
 def load_screen(path: Path) -> Screen:
@@ -35,13 +45,6 @@ def lower_right_origin(screen: Screen):
     x = screen.width // 2
     y = screen.height // 2
     return x, y
-
-
-def emit(screen: Screen, out_path: Path):
-    emitter = ANSIEmitter()
-    ansi = emitter.emit(screen)
-    out_path.write_text(ansi, encoding="utf-8")
-
 
 def test_clip_pipeline():
     src_path = Path(sys.argv[1])

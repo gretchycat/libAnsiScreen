@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from libansiscreen.screen import Screen
 from libansiscreen.color.rgb import Color
@@ -10,9 +9,9 @@ from libansiscreen.screen_ops.colorize import colorize
 # Output directory for visual inspection
 # ------------------------------------------------------------
 
+from pathlib import Path
 OUT = Path("out")
 OUT.mkdir(exist_ok=True)
-
 
 def emit(screen: Screen, name: str):
     ansi = ANSIEmitter().emit(screen)
