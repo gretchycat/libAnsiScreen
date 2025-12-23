@@ -264,7 +264,7 @@ class Screen:
         return cut(self, box)
 
     def colorize(
-        screen,
+        self,
         gradient,
         *,
         mode: str = "hgrad",
@@ -274,7 +274,7 @@ class Screen:
         tint: Optional[float] = None,
         direction: str = "tlbr"):
         from libencodescreen.screen_ops.colorize import colorize
-        return colorize(screen, gradient, mode=mode, foreground=foreground,
+        return colorize(self, gradient, mode=mode, foreground=foreground,
                           background=background, only_if_set=only_if_set,
                           tint=tint, direction=direction)
 
