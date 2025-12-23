@@ -3,10 +3,10 @@
 import sys
 from pathlib import Path
 
-from linansiscreen.screen import Screen
-from linansiscreen.parser.ansi_parser import ANSIParser
-from linansiscreen.renderer.ansi_emitter import ANSIEmitter, Box
-from linansiscreen.color.palette import (
+from libansiscreen.screen import Screen
+from libansiscreen.parser.ansi_parser import ANSIParser
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter, Box
+from libansiscreen.color.palette import (
     create_ansi_16_palette,
     create_ansi_256_palette,
 )

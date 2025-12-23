@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from linansiscreen.screen import Screen
-from linansiscreen.color.rgb import Color
-from linansiscreen.renderer.ansi_emitter import ANSIEmitter
+from libansiscreen.screen import Screen
+from libansiscreen.color.rgb import Color
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 
-from linansiscreen.screen_ops.colorize import colorize
+from libansiscreen.screen_ops.colorize import colorize
 
 # ------------------------------------------------------------
 # Output directory for visual inspection
@@ -25,10 +25,10 @@ def emit(screen: Screen, name: str):
 # Builders
 # ------------------------------------------------------------
 
-from linansiscreen.screen_ops.prim import box
-from linansiscreen.screen_ops.clear import clear
-from linansiscreen.renderer.ansi_emitter import Box
-from linansiscreen.screen_ops.glyph_defs import BOX_BLOCK
+from libansiscreen.screen_ops.prim import box
+from libansiscreen.screen_ops.clear import clear
+from libansiscreen.renderer.ansi_emitter import Box
+from libansiscreen.screen_ops.glyph_defs import BOX_BLOCK
 
 
 def build_solid_block_screen(

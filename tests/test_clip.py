@@ -1,12 +1,13 @@
 from pathlib import Path
 
-from linansiscreen.screen import Screen
-from linansiscreen.parser.ansi_parser import ANSIParser
-from linansiscreen.renderer.ansi_emitter import ANSIEmitter
+import sys
+from libansiscreen.screen import Screen
+from libansiscreen.parser.ansi_parser import ANSIParser
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 
-from linansiscreen.screen_ops.copy import copy as screen_copy
-from linansiscreen.screen_ops.clear import clear as screen_clear
-from linansiscreen.screen_ops.paste import paste as screen_paste
+from libansiscreen.screen_ops.copy import copy as screen_copy
+from libansiscreen.screen_ops.clear import clear as screen_clear
+from libansiscreen.screen_ops.paste import paste as screen_paste
 
 
 def load_screen(path: Path) -> Screen:
@@ -43,7 +44,7 @@ def emit(screen: Screen, out_path: Path):
 
 
 def test_clip_pipeline():
-    src_path = Path("thetis.ans")
+    src_path = Path(sys.argv[1])
     assert src_path.exists(), "Missing input ANSI file"
 
     # Load original screen

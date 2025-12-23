@@ -203,14 +203,14 @@ class ANSIEmitter:
                 codes.append("0")
                 reset = True
             else:
-                if desired.attrs or 0 & ATTR_BOLD: codes.append("1")
-                if (not self.dos_mode) and (desired.attrs or 0 & ATTR_FAINT): codes.append("2")
-                if desired.attrs or 0 & ATTR_ITALIC: codes.append("3")
-                if desired.attrs or 0 & ATTR_UNDERLINE: codes.append("4")
-                if desired.attrs or 0 & ATTR_BLINK: codes.append("5")  # already suppressed under ICE compile
-                if desired.attrs or 0 & ATTR_INVERSE: codes.append("7")
-                if desired.attrs or 0 & ATTR_CONCEAL: codes.append("8")
-                if desired.attrs or 0 & ATTR_STRIKE: codes.append("9")
+                if desired.attrs & ATTR_BOLD: codes.append("1")
+                if (not self.dos_mode) and (desired.attrs & ATTR_FAINT): codes.append("2")
+                if desired.attrs & ATTR_ITALIC: codes.append("3")
+                if desired.attrs & ATTR_UNDERLINE: codes.append("4")
+                if desired.attrs & ATTR_BLINK: codes.append("5")  # already suppressed under ICE compile
+                if desired.attrs & ATTR_INVERSE: codes.append("7")
+                if desired.attrs & ATTR_CONCEAL: codes.append("8")
+                if desired.attrs & ATTR_STRIKE: codes.append("9")
         # Foreground / Background: compare ANSI-space representation
         if desired.fg != prev.fg or reset:
             codes.extend(self._color_state_to_sgr(desired.fg, fg=True))

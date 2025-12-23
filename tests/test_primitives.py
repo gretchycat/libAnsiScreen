@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from linansiscreen.screen import Screen
-from linansiscreen.color.rgb import Color
+from libansiscreen.screen import Screen
+from libansiscreen.color.rgb import Color
 
 # Primitives
-from linansiscreen.screen_ops.prim import (
+from libansiscreen.screen_ops.prim import (
     hline,
     vline,
     box,
@@ -12,14 +12,14 @@ from linansiscreen.screen_ops.prim import (
 )
 
 # Glyph definitions (as you currently use them)
-from linansiscreen.screen_ops.glyph_defs import (
+from libansiscreen.screen_ops.glyph_defs import (
     LINE_SINGLE_HORIZONTAL,
     LINE_SINGLE_VERTICAL,
     BOX_SINGLE,
     BOX_BLOCK,
 )
 
-from linansiscreen.renderer.ansi_emitter import ANSIEmitter
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 
 
 # ------------------------------------------------------------
