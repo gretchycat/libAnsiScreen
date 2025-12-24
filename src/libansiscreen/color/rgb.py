@@ -30,6 +30,32 @@ class Color:
         if not (0 <= self.b <= 255):
             raise ValueError(f"Invalid b value: {self.b}")
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Color):
+            return NotImplemented
+        return (
+            and self.r == other.r
+            and self.g == other.b
+            and self.b == other.b
+        )
+
+    def luminance(self):
+        return (
+            0.2126 * self.r +
+            0.7152 * self.g +
+            0.0722 * self.b
+        )
+
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, Color):
+            return NotImplemented
+        return self.luminance()>other.luminance()
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Color):
+            return NotImplemented
+        return self.luminance()<other.luminance()
+
     # ------------------------------------------------------------
     # Conversions
     # ------------------------------------------------------------
