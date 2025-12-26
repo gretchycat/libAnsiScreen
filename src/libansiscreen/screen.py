@@ -71,6 +71,7 @@ class Screen:
     # ------------------------------------------------------------------
 
     def get_cell(self, x: int, y: int) -> Optional[Cell]:
+        self._ensure_row(y)
         if y < 0 or y >= len(self.rows):
             return None
         if x < 0 or x >= self.width:
@@ -278,4 +279,44 @@ class Screen:
                           background=background, only_if_set=only_if_set,
                           tint=tint, direction=direction)
 
+    def pixel(self, x: int, y: int, color):
+        from libansiscreen.screen_ops.pixelplot import pixel
+        return pixel(self, x, y, color)
+
+    def line(self, x0: int, y0: int, x1: int, y1: int, color):
+        from libansiscreen.screen_ops.pixelplot import draw_line
+        return draw_line(self, x0, y0, x1, y1, color)
+
+    def polyline(self, points, color):
+        from libansiscreen.screen_ops.pixelplot import draw_polyline
+        return draw_polyline(self, points, color)
+
+    def regular_polygon(
+        self,
+        cx: int,
+        cy: int,
+        radius: int,
+        sides: int,
+        color,
+        rotation: float = 0.0,
+    ):
+        from libansiscreen.screen_ops.pixelplot import draw_regular_polygon
+        return draw_regular_polygon(
+            self, cx, cy, radius, sides, color, rotation
+        )
+
+    def regular_star(
+        self,
+        cx: int,
+        cy: int,
+        radius: int,
+        n: int,
+        k: int,
+        color,
+        rotation: float = 0.0,
+    ):
+        from libansiscreen.screen_ops.pixelplot import draw_regular_star
+        return draw_regular_star(
+            self, cx, cy, radius, n, k, color, rotation
+        )
 

@@ -31,13 +31,13 @@ class Color:
             raise ValueError(f"Invalid b value: {self.b}")
 
     def __eq__(self, other: object) -> bool:
+        if other==None:
+            other=Color(0,0,0)
         if not isinstance(other, Color):
             return NotImplemented
-        return (
-            and self.r == other.r
-            and self.g == other.b
-            and self.b == other.b
-        )
+        return (self.r == other.r
+            and self.g == other.g
+            and self.b == other.b)
 
     def luminance(self):
         return (
@@ -47,11 +47,15 @@ class Color:
         )
 
     def __gt__(self, other: object) -> bool:
+        if other==None:
+            other=Color(0,0,0)
         if not isinstance(other, Color):
             return NotImplemented
         return self.luminance()>other.luminance()
 
     def __lt__(self, other: object) -> bool:
+        if other==None:
+            other=Color(0,0,0) 
         if not isinstance(other, Color):
             return NotImplemented
         return self.luminance()<other.luminance()
