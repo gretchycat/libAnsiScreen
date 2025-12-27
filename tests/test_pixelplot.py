@@ -21,7 +21,7 @@ class TestScreenDrawing(unittest.TestCase):
         red = Color(255, 0, 0)
         self.screen.pixel(4, 5, red)
         emit(self.screen, 'pixel.ans')
-        c = self.screen.get_cell(5, 5 // 2)
+        c = self.screen.get_cell(4, 5 // 2)
         self.assertIsNotNone(c)
         self.assertIn(red, [c.fg, c.bg])
 
@@ -48,20 +48,20 @@ class TestScreenDrawing(unittest.TestCase):
 
     def test_regular_polygon(self):
         yellow = Color(255, 255, 0)
-        self.screen.regular_polygon(10, 5, 3, 6, yellow)
+        self.screen.regular_polygon(10, 10, 7, 6, yellow)
         emit(self.screen, 'polygon.ans')
         # check center vicinity
-        for x, y in [(10,5), (12,5), (8,5)]:
+        for x, y in [(3,10), (17,10), (10,4)]:
             c = self.screen.get_cell(x, y // 2)
             self.assertIsNotNone(c)
             self.assertIn(yellow, [c.fg, c.bg])
 
     def test_regular_star(self):
         cyan = Color(0, 255, 255)
-        self.screen.regular_star(10, 5, 4, 5, 2, cyan)
+        self.screen.regular_star(10, 10, 6, 5, 2, cyan)
         emit(self.screen, 'star.ans')
         # verify approximate star points
-        for x, y in [(10,1), (14,5), (6,5)]:
+        for x, y in [(16,10), (12,4), (12,16)]:
             c = self.screen.get_cell(x, y // 2)
             self.assertIsNotNone(c)
             self.assertIn(cyan, [c.fg, c.bg])
