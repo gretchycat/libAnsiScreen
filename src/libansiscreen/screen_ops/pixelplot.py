@@ -20,8 +20,8 @@ def make_cell(c1, c2):
     if c2 is None:
         c2=Color(0,0,0)
     if c1==c2:
-        if c1==Color(0,0,0):
-            return Cell(' ', c1, c2)
+        #if c1==Color(0,0,0):
+        #    return Cell(' ', c1, c2)
         return Cell(BLOCK_FULL, c1, None)
     if c1>c2:
         return Cell(BLOCK_TOP, c1, c2)
@@ -32,20 +32,20 @@ def pixelplot(screen, x, y, color):
     if c:
         if y%2==0: #top block
             if c.char==BLOCK_BOTTOM:
-                c=make_cell(color, c.bg)
+                c=make_cell(color, c.fg)
             elif c.char==BLOCK_FULL:
                 c=make_cell(color, c.fg)
             elif c.char==BLOCK_TOP:
-                c=make_cell(color, c.fg)
+                c=make_cell(color, c.bg)
             else:
                 c=make_cell(color, c.bg)
         else:   #bottom block
             if c.char==BLOCK_TOP:
-                c=make_cell(c.bg, color)
+                c=make_cell(c.fg, color)
             elif c.char==BLOCK_FULL:
                 c=make_cell(c.fg, color)
             elif c.char==BLOCK_BOTTOM:
-                c=make_cell(c.fg, color)
+                c=make_cell(c.bg, color)
             else:
                 c=make_cell(c.bg, color)
         screen.set_cell(x,y//2, c)
@@ -84,7 +84,6 @@ def draw_line(screen, x0, y0, x1, y1, color):
                 x += sx
                 err += dy
             y += sy
-
     # plot last point
     pixelplot(screen, x1, y1, color)
 

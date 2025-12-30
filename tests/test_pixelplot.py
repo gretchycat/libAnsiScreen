@@ -1,10 +1,40 @@
 import unittest
+import math
 from libansiscreen.screen import Screen
+from libansiscreen.cell import Cell
 from libansiscreen.color.rgb import Color
 from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 from pathlib import Path
 OUT = Path("out")
 OUT.mkdir(exist_ok=True)
+
+def cell_state(cell):
+    if cell is None:
+        return None
+    return (cell.char, cell.fg, cell.bg)
+
+from libansiscreen.color.rgb import Color
+
+DARK = Color(10, 10, 10)
+MID  = Color(128, 128, 128)
+BRIGHT = Color(250, 250, 250)
+
+from libansiscreen.screen import Screen
+from libansiscreen.screen_ops.pixelplot import pixel
+
+def run_pixel(initial_cell, plot_y, color):
+    """
+    initial_cell: Cell or None
+    plot_y: logical y (even=top, odd=bottom)
+    color: Color to plot
+    """
+    screen = Screen(1)
+
+    if initial_cell is not None:
+        screen.set_cell(0, 0, initial_cell)
+
+    pixel(screen, 0, plot_y, color)
+    return screen.get_cell(0, 0)
 
 def emit(screen: Screen, name: str):
     ansi = ANSIEmitter().emit(screen)
@@ -15,7 +45,7 @@ def emit(screen: Screen, name: str):
 class TestScreenDrawing(unittest.TestCase):
     def setUp(self):
         # Create a small test screen, adjust dimensions as needed
-        self.screen = Screen(width=20)
+        self.screen = Screen(width=80)
 
     def test_pixel(self):
         red = Color(255, 0, 0)
@@ -24,6 +54,68 @@ class TestScreenDrawing(unittest.TestCase):
         c = self.screen.get_cell(4, 5 // 2)
         self.assertIsNotNone(c)
         self.assertIn(red, [c.fg, c.bg])
+
+    def test_line_slopes(self):
+        for a in range(0, 360, 15):
+            r=math.radians(a)
+            w=self.screen.width//2
+            self.screen.line(w,w,
+                             w+round(math.sin(r)*w),
+                             w+round(math.cos(r)*w),
+                             Color.hsv(a/360, 1.0, 1.0))
+        emit(self.screen, 'line_slope.ans')
+
+    def test_empty_to_top_pixel(self):
+        cell = run_pixel(None, 0, MID)
+        assert cell_state(cell) == ("▀", MID, None)
+
+    def test_empty_to_bottom_pixel(self):
+        cell = run_pixel(None, 1, MID)
+        assert cell_state(cell) == ("▄", MID, None)
+
+    def test_top_then_same_bottom_becomes_solid(self):
+        start = Cell("▀", MID, None)
+        cell = run_pixel(start, 1, MID)
+        assert cell_state(cell) == ("█", MID, None)
+
+    def test_bottom_then_same_top_becomes_solid(self):
+        start = Cell("▄", MID, None)
+        cell = run_pixel(start, 0, MID)
+        assert cell_state(cell) == ("█", MID, None)
+
+    def test_top_brighter_than_bottom(self):
+        start = Cell("▀", BRIGHT, None)
+        cell = run_pixel(start, 1, DARK)
+        assert cell_state(cell) == ("▀", BRIGHT, DARK)
+
+    def test_bottom_brighter_than_top(self):
+        start = Cell("▀", DARK, None)
+        cell = run_pixel(start, 1, BRIGHT)
+        assert cell_state(cell) == ("▄", BRIGHT, DARK)
+
+    def test_solid_overwritten_on_top(self):
+        start = Cell("█", MID, None)
+        cell = run_pixel(start, 0, BRIGHT)
+        assert cell.char in ("▀", "█")
+        assert cell.fg == BRIGHT
+
+    def test_solid_overwritten_on_bottom(self):
+        start = Cell("█", MID, None)
+        cell = run_pixel(start, 1, BRIGHT)
+        assert cell.char in ("▄", "█")
+        assert cell.fg == BRIGHT
+
+    def test_non_block_glyph_is_overwritten(self):
+        start = Cell("X", DARK, None)
+        cell = run_pixel(start, 0, MID)
+        assert cell.char in ("▀", "█")
+        assert cell.fg == MID
+
+    def test_no_pixelplot_drops_color(self):
+        start = Cell("▀", DARK, None)
+        cell = run_pixel(start, 1, BRIGHT)
+        colors = {cell.fg, cell.bg}
+        assert BRIGHT in colors
 
     def test_line(self):
         green = Color(0, 255, 0)
