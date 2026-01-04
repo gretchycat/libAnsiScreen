@@ -5,6 +5,8 @@
 BLOCK_FULL = "█"
 BLOCK_TOP = "▀"
 BLOCK_BOTTOM = "▄"
+BLOCK_LEFT="▌"
+BLOCK_RIGHT="▐"
 
 # =========================
 # Single-line box glyphs

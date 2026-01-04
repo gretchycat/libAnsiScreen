@@ -283,6 +283,15 @@ class Screen:
         from libansiscreen.screen_ops.pixelplot import pixel
         return pixel(self, x, y, color)
 
+    def pixelplot(self, x: int, y: int, color):
+        from libansiscreen.screen_ops.pixelplot import pixel
+        return pixel(self, x, y, color)
+
+    def pixelget(self, x: int, y: int):
+        from libansiscreen.screen_ops.pixelplot import pixelget
+        return pixelget(self, x, y)
+
+
     def line(self, x0: int, y0: int, x1: int, y1: int, color):
         from libansiscreen.screen_ops.pixelplot import draw_line
         return draw_line(self, x0, y0, x1, y1, color)
