@@ -4,77 +4,51 @@ from libansiscreen.screen import Screen
 from libansiscreen.cell import Cell
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
-from libansiscreen.color.palette import create_ansi_16_palette
-
-_ANSI16 = create_ansi_16_palette()
-DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
-DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black
 
 # simulated graphic framebuffer
 # using the "█", "▀" "▄", " " characters.
 # brighter color is solid.
 # same bright color is solid fg color. same dim color is ' ' bg color
 # if a color/char is set, set both fg/bg intelligently
+BLOCK_FULL = "█"
+BLOCK_TOP = "▀"
+BLOCK_BOTTOM = "▄"
 
 def make_cell(c1, c2):
     if c1 is None:
-        c1=DEFAULT_BG
+        c1=Color(0,0,0)
     if c2 is None:
-        c2=DEFAULT_BG
+        c2=Color(0,0,0)
     if c1==c2:
-        if c1==DEFAULT_BG:
-            return Cell(' ', c1, c2)
-        return Cell(G.BLOCK_FULL, c1, None)
+        #if c1==Color(0,0,0):
+        #    return Cell(' ', c1, c2)
+        return Cell(BLOCK_FULL, c1, None)
     if c1>c2:
-        return Cell(G.BLOCK_TOP, c1, c2)
-    return Cell(G.BLOCK_BOTTOM, c2, c1)
+        return Cell(BLOCK_TOP, c1, c2)
+    return Cell(BLOCK_BOTTOM, c2, c1)
 
 def pixelplot(screen, x, y, color):
     c=screen.get_cell(x, y//2)
     if c:
         if y%2==0: #top block
-            if c.char==G.BLOCK_BOTTOM:
+            if c.char==BLOCK_BOTTOM:
                 c=make_cell(color, c.fg)
-            elif c.char==G.BLOCK_FULL:
+            elif c.char==BLOCK_FULL:
                 c=make_cell(color, c.fg)
-            elif c.char==G.BLOCK_TOP:
+            elif c.char==BLOCK_TOP:
                 c=make_cell(color, c.bg)
             else:
                 c=make_cell(color, c.bg)
         else:   #bottom block
-            if c.char==G.BLOCK_TOP:
+            if c.char==BLOCK_TOP:
                 c=make_cell(c.fg, color)
-            elif c.char==G.BLOCK_FULL:
+            elif c.char==BLOCK_FULL:
                 c=make_cell(c.fg, color)
-            elif c.char==G.BLOCK_BOTTOM:
+            elif c.char==BLOCK_BOTTOM:
                 c=make_cell(c.bg, color)
             else:
                 c=make_cell(c.bg, color)
         screen.set_cell(x,y//2, c)
-
-def pixelget(screen, x, y):
-    c=screen.get_cell(x, y//2)
-    color=Color(0,0,255)
-    if c:
-        if y%2==0: #top block
-            if c.char==G.BLOCK_BOTTOM:
-                color=c.bg or DEFAULT_BG
-            elif c.char==G.BLOCK_FULL:
-                color=c.fg or DEFAULT_FG
-            elif c.char==G.BLOCK_TOP:
-                color=c.fg or DEFAULT_FG
-            else:
-                color=c.bg or DEFAULT_BG
-        else:   #bottom block
-            if c.char==G.BLOCK_TOP:
-                color=c.bg or DEFAULT_BG
-            elif c.char==G.BLOCK_FULL:
-                color=c.fg or DEFAULT_FG
-            elif c.char==G.BLOCK_BOTTOM:
-                color=c.fg or DEFAULT_FG
-            else:
-                color=c.bg or DEFAULT_BG
-    return color
 
 def pixel(screen, x, y, color):
     return pixelplot(screen, x, y, color)
