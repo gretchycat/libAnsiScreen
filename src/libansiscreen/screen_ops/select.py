@@ -147,8 +147,8 @@ def ellipse_char_mask(cx, cy, rx, ry):
             mask.set_cell(x,y,Cell(G.BLOCK_FULL,None,None))
     return mask
 
-def stamp_pixel_mask(screen, stamp):
+def stamp_pixel_mask(stamp):
     pass
 
-def stamp_char_mask(screen, stamp):
+def stamp_char_mask(stamp):
     pass

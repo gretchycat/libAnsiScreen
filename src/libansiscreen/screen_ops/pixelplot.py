@@ -5,6 +5,7 @@ from libansiscreen.cell import Cell
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
 from libansiscreen.color.palette import create_ansi_16_palette
+import math
 
 _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
@@ -126,8 +127,6 @@ def draw_polyline(screen, points, color):
         x0, y0 = points[i]
         x1, y1 = points[i + 1]
         draw_line(screen, x0, y0, x1, y1, color)
-
-import math
 
 def regular_polygon(cx, cy, radius, sides, rotation=0.0):
     points = []
