@@ -110,10 +110,10 @@ class ANSIEmitter:
             out.append("\x1b[0m")
             out.append("\n")
             prev = TerminalState(
-                fg=AnsiColorState("ansi16", (7,)),
-                bg=AnsiColorState("ansi16", (0,)),
+                fg=AnsiColorState("ansi16", (7,0)),
+                bg=AnsiColorState("ansi16", (0,0)),
                 attrs=0,
-            ) 
+            )
         return "".join(out)
 
         # -------------------------
