@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Tuple
 from libansiscreen.screen import Screen
 from libansiscreen.cell import Cell
+from libansiscreen import cell as C
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
 from libansiscreen.color.palette import create_ansi_16_palette
@@ -53,9 +54,12 @@ def pixelplot(screen, x, y, color):
                 c=make_cell(c.bg, color)
         screen.set_cell(x,y//2, c)
 
+pixel=pixelplot
+plot=pixel
+
 def pixelget(screen, x, y):
     c=screen.get_cell(x, y//2)
-    color=Color(0,0,255)
+    color=DEFAULT_BG
     if c:
         if y%2==0: #top block
             if c.char==G.BLOCK_BOTTOM:
@@ -76,10 +80,6 @@ def pixelget(screen, x, y):
             else:
                 color=c.bg or DEFAULT_BG
     return color
-
-def pixel(screen, x, y, color):
-    return pixelplot(screen, x, y, color)
-plot=pixel
 
 def draw_line(screen, x0, y0, x1, y1, color):
     """
@@ -183,4 +183,79 @@ def draw_regular_star(screen, cx, cy, radius, n, k, color, rotation=0.0):
     """
     points = regular_star(cx, cy, radius, n, k, rotation)
     draw_polyline(screen, points, color)
+
+def flood_fill(screen, x_seed, y_seed,color=None):
+    """
+    Generate a mask from seed point that is complement of seed,
+    respecting block types and optionally color/char matches.
+    """
+    width, height = screen.width, screen.height*2
+    mask=Screen(width=width)
+    stack = [(x_seed, y_seed)]
+    seed_color = screen.pixelget(x_seed,y_seed)
+    while stack:
+        x, y = stack.pop()
+        mcell=mask.get_cell(x, y//2)
+        if mask.pixelget(x, y) == DEFAULT_FG:
+            continue    # already visited
+        mcell=mask.get_cell(x, y//2)
+        if y%2==1:
+            if mcell.attrs & C.ATTR_UNDERLINE:
+                continue  # already visited
+        else:
+            if mcell.attrs & C.ATTR_STRIKE:
+                continue  # already visited
+        colorx = screen.pixelget(x, y)
+        # Decide if this pixel is part of fill region
+        if colorx==seed_color:
+            mask.pixelplot(x,y,DEFAULT_FG)
+            if color:
+                screen.pixelplot(x,y,color)
+        else:
+            mcell=mask.get_cell(x, y//2)
+            a=mcell.attrs or 0
+            if y%2==1:
+                mask.set_cell(x,y//2, Cell(mcell.char, mcell.fg, mcell.bg, a | C.ATTR_UNDERLINE))
+            else:
+                mask.set_cell(x,y//2, Cell(mcell.char, mcell.fg, mcell.bg, a | C.ATTR_STRIKE))
+            continue
+        # Push neighbors
+        for nx, ny in [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]:
+            if 0 <= nx < width and 0 <= ny < height:
+                stack.append((nx, ny))
+    return mask
+
+def draw_rectangle(screen,x1, y1, x2, y2,color=None):
+    mask=Screen(width=max(x1, x2)+1)
+    for y in range(min(y1,y2), max(y1,y2)):
+        for x in range(min(x1,x2),max(x1,x2)):
+            mask.pixelplot(x,y,DEFAULT_FG)
+            if screen and color:
+                screen.pixelplot(x,y,color)
+    return mask
+
+def draw_ellipse(screen, cx, cy, rx, ry, color=None):
+    # Use screen dimensions for safe clamping
+    screen_w = cx+rx+1
+    screen_h = cy+ry+1
+    mask = Screen(width=screen_w)
+    # Iterate from the top of the ellipse to the bottom
+    for y in range(cy - ry, cy + ry + 1):
+        # Skip rows outside the screen vertical bounds
+        if y < 0 or y >= screen_h:
+            continue
+        # Standardize y relative to center
+        dy = y - cy
+        # Calculate the ratio of how far we are from the vertical center
+        # We use float division to find the horizontal spread (dx)
+        h_ratio = 1 - (dy**2 / ry**2)
+        if h_ratio >= 0:
+            dx = int(rx * math.sqrt(h_ratio))
+            # Clamp to screen boundaries
+            x_left = max(0, cx - dx)
+            x_right = min(screen_w - 1, cx + dx)
+            mask.line(x_left, y, x_right, y, DEFAULT_FG)
+            if screen and color:
+                screen.line(x_left,y,x_right, y, color)
+    return mask
 

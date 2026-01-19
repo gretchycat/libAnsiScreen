@@ -199,3 +199,5 @@ def stamp_from_screen(
             out.set_cell(w - 1, y, border_cell())
 
     return out
+
+

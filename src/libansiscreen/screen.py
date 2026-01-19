@@ -329,3 +329,14 @@ class Screen:
             self, cx, cy, radius, n, k, color, rotation
         )
 
+    def flood_fill(screen, x_seed, y_seed,color=None):
+        from libansiscreen.screen_ops.pixelplot import flood_fill
+        return flood_fill(screen, x_seed, y_seed, color)
+
+    def draw_rectangle(screen,x1, y1, x2, y2,color=None):
+        from libansiscreen.screen_ops.pixelplot import draw_rectangle
+        return draw_rectangle(screen,x1, y1, x2, y2,color)
+
+    def draw_ellipse(screen, cx, cy, rx, ry, color=None):
+        from libansiscreen.screen_ops.pixelplot import draw_ellipse
+        return draw_ellipse(screen, cx, cy, rx, ry, color)

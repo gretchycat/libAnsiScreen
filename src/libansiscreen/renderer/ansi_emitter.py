@@ -107,8 +107,8 @@ class ANSIEmitter:
                 if self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
                 out.append(ch or ' ')
+           # out.append("\x1b[0m")
             out.append("\n")
-            #out.append("\x1b[0m")
         return "".join(out)
 
         # -------------------------

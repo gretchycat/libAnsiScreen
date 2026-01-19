@@ -41,7 +41,7 @@ class Cell:
 
     char: str = None
     fg: Optional[Color] = None #DEFAULT_FG
-    bg: Optional[Color] = None #DEFAULT_BG
+    bg: Optional[Color] = DEFAULT_BG
     attrs: int = 0
 
     # --------------------------------------------------------------
