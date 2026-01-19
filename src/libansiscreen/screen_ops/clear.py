@@ -4,6 +4,7 @@ from libansiscreen.screen import Screen
 from libansiscreen.cell import Cell
 from libansiscreen.renderer.ansi_emitter import Box
 
+from .color.rgb import Color
 
 # ------------------------------------------------------------
 # Internal helper: normalize legacy tuples to Box
@@ -52,7 +53,7 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
                     Cell(
                         char=None,
                         fg=None,
-                        bg=None,
+                        bg=Color(0,0,0),
                         attrs=0,
                     )
                 )
