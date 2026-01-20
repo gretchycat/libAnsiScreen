@@ -5,6 +5,7 @@ from libansiscreen.cell import Cell
 from libansiscreen import cell as C
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
+from libansiscreen.screen_ops.fill import block_fill
 from libansiscreen.color.palette import create_ansi_16_palette
 import math
 

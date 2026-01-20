@@ -12,7 +12,7 @@ from libansiscreen import cell as C
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
 from libansiscreen.color.palette import create_ansi_16_palette
-
+from libansiscreen.screen_ops.fill import fill
 _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
 DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black

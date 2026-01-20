@@ -16,13 +16,11 @@ from ..cell import (
 )
 from ..color.rgb import Color
 from ..color.palette import create_ansi_16_palette, create_ansi_256_palette
-from ..color.quantize import quantize_exact, quantize_nearest_hsv
+from ..color.quantize import quantize_exact, quantize_nearest_rgb
 from ..screen import Screen
-
 
 ANSI16 = create_ansi_16_palette()
 ANSI256 = create_ansi_256_palette()
-
 
 @dataclass(frozen=True)
 class Box:
@@ -150,13 +148,13 @@ class ANSIEmitter:
     def _encode_color(self, color: Color, *, fg: bool) -> AnsiColorState:
         if self.dos_mode:
             # DOS: map to ANSI16 via HSV; represent as base(0-7) + bright flag
-            idx = quantize_nearest_hsv(color, ANSI16)
+            idx = quantize_nearest_rgb(color, ANSI16)
             base = idx & 0x07
             bright = 1 if idx >= 8 else 0
             return AnsiColorState("dos", (base, bright))
         # Forced palette: always encode in that palette’s index space (ansi256 SGR form)
         if self.palette is not None:
-            idx = quantize_nearest_hsv(color, self.palette)
+            idx = quantize_nearest_rgb(color, self.palette)
             if idx<16:
                 return AnsiColorState("ansi16", (idx,))
             return AnsiColorState("ansi256", (idx,))
