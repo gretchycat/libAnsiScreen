@@ -80,7 +80,6 @@ def build_block_box_and_stamp() -> Screen:
     stamp = stamp_from_screen(
         src,
         transparent_chars=("█",),
-        add_border=True,
         border_bg=clr,
     )
 

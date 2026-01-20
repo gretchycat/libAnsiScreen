@@ -6,6 +6,17 @@ from libansiscreen.screen import Screen
 from libansiscreen.cell import Cell
 from libansiscreen.screen_ops import glyph_defs as G
 
+import math
+from typing import Optional, Tuple
+from libansiscreen import cell as C
+from libansiscreen.color.rgb import Color
+from libansiscreen.screen_ops import glyph_defs as G
+from libansiscreen.color.palette import create_ansi_16_palette
+
+_ANSI16 = create_ansi_16_palette()
+DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
+DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black
+DEFAULT_CELL = Cell('X', DEFAULT_FG, DEFAULT_BG, 0)
 
 # ============================================================
 # Line merge support (explicit, opt-in)
@@ -45,7 +56,6 @@ def resolve_glyph(g):
         return g()
     return g
 
-
 # ============================================================
 # Horizontal line
 # ============================================================
@@ -78,7 +88,6 @@ def hline(
 
     return scr
 
-
 # ============================================================
 # Vertical line
 # ============================================================
@@ -110,7 +119,6 @@ def vline(
         scr.set_cell(xx, y, Cell(char=char))
 
     return scr
-
 
 # ============================================================
 # Box (glyph-driven, transparency-aware)
@@ -155,7 +163,6 @@ def box(
 
     return scr
 
-
 # ============================================================
 # Stamp from screen
 # ============================================================
@@ -163,9 +170,8 @@ def box(
 def stamp_from_screen(
     source: Screen,
     *,
-    transparent_chars: Iterable[str] = (" ",),
+    transparent_chars = [None,' '],
     box: Optional[Tuple[int, int, int, int]] = None,
-    add_border: bool = False,
     border_bg=None,
 ) -> Screen:
     if box:
@@ -185,7 +191,7 @@ def stamp_from_screen(
             out.set_cell(x, y, src.copy())
 
     # Optional border
-    if add_border:
+    if border_bg:
         bg = border_bg  # default: black, passed explicitly
 
         def border_cell():
@@ -199,5 +205,71 @@ def stamp_from_screen(
             out.set_cell(w - 1, y, border_cell())
 
     return out
+
+def flood_fill_char_mask(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
+    """
+    Generate a mask from seed point that is complement of seed,
+    respecting block types and optionally color/char matches.
+    """
+    width, height = screen.width, screen.height
+    mask=Screen(width=width)
+    stack = [(x_seed, y_seed)]
+    seed_cell = screen.get_cell(x_seed, y_seed)
+    while stack:
+        x, y = stack.pop()
+        cell = screen.get_cell(x, y)
+        if mask.get_cell(x, y).char is not None:
+            continue  # already visited
+        fill_pixel = False
+        color_ok=True
+        if not ignore_fg_color:
+            if seed_cell.fg!=cell.fg:
+                color_ok=False
+        if not ignore_bg_color:
+            if seed_cell.bg!=cell.bg:
+                color_ok=False
+        if color_ok:
+            fill_pixel = (cell.char == seed_cell.char)
+        if fill_pixel and color_ok:
+            mask.set_cell(x, y, Cell(G.BLOCK_FULL, None, None))
+        else:
+            mask.set_cell(x, y, Cell('x', None, None))
+            continue
+        # Push neighbors
+        for nx, ny in [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]:
+            if 0 <= nx < width and 0 <= ny < height:
+                stack.append((nx, ny))
+    return mask
+
+def char_rectangle(screen,x1, y1, x2, y2, fill=DEFAULT_FG):
+    mask=Screen(width=max(x1, x2)+1)
+    for y in range(min(y1,y2), max(y1,y2)):
+        for x in range(min(x1,x2),max(x1,x2)):
+            mask.set_cell(x,y,Cell(G.BLOCK_FULL,None, None))
+    return mask
+
+def char_ellipse(screen,cx, cy, rx, ry,fill=DEFAULT_FG):
+    # Use screen dimensions for safe clamping
+    screen_w = cx+rx+1
+    screen_h = cy+ry+1
+    mask = Screen(width=screen_w)
+    # Iterate from the top of the ellipse to the bottom
+    for y in range(cy - ry, cy + ry + 1):
+        # Skip rows outside the screen vertical bounds
+        if y < 0 or y >= screen_h:
+            continue
+        # Standardize y relative to center
+        dy = y - cy
+        # Calculate the ratio of how far we are from the vertical center
+        # We use float division to find the horizontal spread (dx)
+        h_ratio = 1 - (dy**2 / ry**2)
+        if h_ratio >= 0:
+            dx = int(rx * math.sqrt(h_ratio))
+            # Clamp to screen boundaries
+            x_left = max(0, cx - dx)
+            x_right = min(screen_w - 1, cx + dx) 
+        for x in range(x_left,x_right+1):
+            mask.set_cell(x,y,Cell(G.BLOCK_FULL,None,None))
+    return mask
 
 

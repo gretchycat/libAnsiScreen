@@ -58,16 +58,15 @@ def test_clip_pipeline():
     dst_x, dst_y = lower_right_origin(screen)
 
     # --- COPY ---
-    buf = screen_copy(screen, box)
+    buf = screen.copy(box)
     emit(buf, Path("test_clip_copy_truecolor.ans"))
 
     # --- CLEAR ---
-    screen_clear(screen, box)
+    screen.clear(box)
     emit(screen, Path("test_clip_cleared.ans"))
 
     # --- PASTE ---
-    screen_paste(
-        screen,
+    screen.paste(
         buf,
         box=(dst_x, dst_y, None, None),
     )

@@ -280,8 +280,8 @@ class Screen:
                           tint=tint, direction=direction)
 
     def pixel(self, x: int, y: int, color):
-        from libansiscreen.screen_ops.pixelplot import pixel
-        return pixel(self, x, y, color)
+        from libansiscreen.screen_ops.pixelplot import pixelplot
+        return pixelplot(self, x, y, color)
 
     def pixelplot(self, x: int, y: int, color):
         from libansiscreen.screen_ops.pixelplot import pixelplot
@@ -290,7 +290,6 @@ class Screen:
     def pixelget(self, x: int, y: int):
         from libansiscreen.screen_ops.pixelplot import pixelget
         return pixelget(self, x, y)
-
 
     def line(self, x0: int, y0: int, x1: int, y1: int, color):
         from libansiscreen.screen_ops.pixelplot import draw_line
@@ -329,14 +328,18 @@ class Screen:
             self, cx, cy, radius, n, k, color, rotation
         )
 
-    def flood_fill(screen, x_seed, y_seed,color=None):
+    def stamp_from_screen(self,transparent_chars=None,box=None,border_bg=None):
+        from libansiscreen.screen_ops.prim import stamp_from_screen
+        return stamp_from_screen(self,transparent_chars,box,border_bg)
+
+    def flood_fill(self, x_seed, y_seed,fill=None):
         from libansiscreen.screen_ops.pixelplot import flood_fill
-        return flood_fill(screen, x_seed, y_seed, color)
+        return flood_fill(self, x_seed, y_seed, fill)
 
-    def draw_rectangle(screen,x1, y1, x2, y2,color=None):
+    def draw_rectangle(self,x1, y1, x2, y2,fill=None):
         from libansiscreen.screen_ops.pixelplot import draw_rectangle
-        return draw_rectangle(screen,x1, y1, x2, y2,color)
+        return draw_rectangle(self,x1, y1, x2, y2,fill)
 
-    def draw_ellipse(screen, cx, cy, rx, ry, color=None):
+    def draw_ellipse(self, cx, cy, rx, ry, fill=None):
         from libansiscreen.screen_ops.pixelplot import draw_ellipse
-        return draw_ellipse(screen, cx, cy, rx, ry, color)
+        return draw_ellipse(self, cx, cy, rx, ry, fill)
