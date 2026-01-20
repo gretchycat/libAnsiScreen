@@ -11,18 +11,18 @@ c256=create_ansi_256_palette()
 
 def fill(filldata) -> Cell:
     c=Cell('X', Color(255,0,0), None, 0)
-    if type(filldata)==Color:
+    if isInstance(filldata, Color):
         return Cell(G.BLOCK_FULL, filldata,None,0)
-    elif type(filldata)==Cell:
+    elif isInstance(filldata, Cell):
         return filldata
-    elif type(filldata)==int:
+    elif isInstance(filldata, int):
         return Cell(G.BLOCK_FULL, c256[abs(filldata)%256],None,0)
-    elif type(filldata)==dict:
-        if filldata['screen'] and filldata['x'] and filldata.['y']:
+    elif isInstance(filldata, dict):
+        if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
             s=filldata['screen']
-            x=filldata['x']
-            y=filldata['y']
-            if type(s)==Screen:
+            x=int(filldata['x'])
+            y=int(filldata['y'])
+            if isInstance(s, Screen):
                 w=s.width
                 h.s.height()
                 return s.get_cell(x%w,y%h)
@@ -30,18 +30,18 @@ def fill(filldata) -> Cell:
 
 def block_fill(filldata) -> Color:
     c=Color(255,0,0)
-    if type(filldata)==Color:
+    if isInstance(filldata, Color):
         return filldata
-    elif type(filldata)==Cell:
+    elif isInstance(filldata, Cell):
         return filldata.fg
-    elif type(filldata)==int:
+    elif isInstance(filldata, int):
         return c256[abs(filldata)%256]
-    elif type(filldata)==dict:
-        if filldata['screen'] and filldata['x'] and filldata.['y']:
+    elif isInstance(filldata, dict):
+        if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
             s=filldata['screen']
-            x=filldata['x']
-            y=filldata['y']
-            if type(s)==Screen:
+            x=int(filldata['x'])
+            y=int(filldata['y'])
+            if isInstance(s, Screen):
                 w=s.width
                 h.s.height()*2
                 return s.pixelget(x%w, y%h)
