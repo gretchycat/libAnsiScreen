@@ -1,0 +1,5 @@
+build
+out
+src/libAnsiScreen.egg-info
+*.swp
+__pycache__
