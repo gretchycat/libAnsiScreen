@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 from libansiscreen.screen import Screen
-from libansiscreen.parser.ansi_parser import ANSIParser
 from libansiscreen.renderer.ansi_emitter import ANSIEmitter, Box
 from libansiscreen.color.palette import (
     create_ansi_16_palette,
@@ -19,8 +18,6 @@ def emit( name: str, ansi):
     path.write_text(ansi)
     print(f"Wrote {path}")
 
-
-
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
@@ -34,8 +31,7 @@ DEFAULT_WIDTH = 80
 
 def parse_ansi(path: Path, *, width=DEFAULT_WIDTH, box=None) -> Screen:
     screen = Screen(width=width)
-    parser = ANSIParser(screen)
-    parser.feed(path.read_bytes())
+    screen.print(path.read_bytes())
     return screen
 
 

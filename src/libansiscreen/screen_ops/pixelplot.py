@@ -185,7 +185,7 @@ def draw_regular_star(screen, cx, cy, radius, n, k, color, rotation=0.0):
     points = regular_star(cx, cy, radius, n, k, rotation)
     draw_polyline(screen, points, color)
 
-def flood_fill(screen, x_seed, y_seed,color=None):
+def flood_fill(screen, x_seed, y_seed,fill=None):
     """
     Generate a mask from seed point that is complement of seed,
     respecting block types and optionally color/char matches.
@@ -210,8 +210,8 @@ def flood_fill(screen, x_seed, y_seed,color=None):
         # Decide if this pixel is part of fill region
         if colorx==seed_color:
             mask.pixelplot(x,y,DEFAULT_FG)
-            if color:
-                screen.pixelplot(x,y,color)
+            if fill:
+                screen.pixelplot(x,y,block_fill(fill))
         else:
             mcell=mask.get_cell(x, y//2)
             a=mcell.attrs or 0
@@ -226,16 +226,16 @@ def flood_fill(screen, x_seed, y_seed,color=None):
                 stack.append((nx, ny))
     return mask
 
-def draw_rectangle(screen,x1, y1, x2, y2,color=None):
+def draw_rectangle(screen,x1, y1, x2, y2,fill=None):
     mask=Screen(width=max(x1, x2)+1)
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
             mask.pixelplot(x,y,DEFAULT_FG)
-            if screen and color:
-                screen.pixelplot(x,y,color)
+            if screen and fill:
+                screen.pixelplot(x,y,block_fill(fill))
     return mask
 
-def draw_ellipse(screen, cx, cy, rx, ry, color=None):
+def draw_ellipse(screen, cx, cy, rx, ry, fill=None):
     # Use screen dimensions for safe clamping
     screen_w = cx+rx+1
     screen_h = cy+ry+1
@@ -256,7 +256,7 @@ def draw_ellipse(screen, cx, cy, rx, ry, color=None):
             x_left = max(0, cx - dx)
             x_right = min(screen_w - 1, cx + dx)
             mask.line(x_left, y, x_right, y, DEFAULT_FG)
-            if screen and color:
-                screen.line(x_left,y,x_right, y, color)
+            if screen and fill:
+                screen.line(x_left,y,x_right, y, block_fill(fill))
     return mask
 

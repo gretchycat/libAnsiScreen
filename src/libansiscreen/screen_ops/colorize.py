@@ -18,12 +18,9 @@ def apply_hgrad(
 ) -> None:
     width = screen.width
     height = screen.height
-
     if width <= 1 or not gradient:
         return
-
     n = len(gradient)
-
     for y in range(height):
         for x in range(width):
             cell = screen.get_cell(x, y)
@@ -31,12 +28,10 @@ def apply_hgrad(
                 continue
             if only_if_set and cell.char is None:
                 continue
-
             idx = int(x * (n - 1) / (width - 1))
             color = gradient[idx]
-
             if foreground:
-                cell.fg = color if tint is None else color.blend(cell.fg,tint)
+                cell.fg = color if tint is None else color.blend(cell.fg,tint
             if background:
                 cell.bg = color if tint is None else color.blend(cell.bg,tint)
 
@@ -55,28 +50,22 @@ def apply_vgrad(
 ) -> None:
     width = screen.width
     height = screen.height
-
     if height <= 1 or not gradient:
         return
-
     n = len(gradient)
-
     for y in range(height):
         idx = int(y * (n - 1) / (height - 1))
         color = gradient[idx]
-
         for x in range(width):
             cell = screen.get_cell(x, y)
             if cell is None:
                 continue
             if only_if_set and cell.char is None:
                 continue
-
             if foreground:
-                cell.fg = color if tint is None else color.blend(cell.fg,tint)
+                cell.fg = color if tint is None else color.blend(cell.fg,tint
             if background:
                 cell.bg = color if tint is None else color.blend(cell.bg,tint)
-
 
 # ------------------------------------------------------------
 # Diagonal gradient (top-left → bottom-right)
@@ -94,15 +83,12 @@ def apply_dgrad(
 ) -> None:
     width = screen.width
     height = screen.height
-
     if width <= 1 or height <= 1 or not gradient:
         return
-
     n = len(gradient)
     denom = (width - 1) + (height - 1)
     if denom <= 0:
         return
-
     for y in range(height):
         for x in range(width):
             cell = screen.get_cell(x, y)
@@ -110,15 +96,12 @@ def apply_dgrad(
                 continue
             if only_if_set and cell.char is None:
                 continue
-
             if direction == "trbl":
                 d = (width - 1 - x) + y
             else:
                 d = x + y
-
             idx = int(d * (n - 1) / denom)
             color = gradient[idx]
-
             if foreground:
                 cell.fg = color if tint is None else color.blend(cell.fg,tint)
             if background:
@@ -139,7 +122,6 @@ def apply_words(
 ) -> None:
     if not gradient:
         return
-
     n = len(gradient)
     idx = 0
     for y in range(screen.height):
@@ -151,12 +133,10 @@ def apply_words(
                 idx=0
                 continue
             color = gradient[min(idx, n - 1)]
-
             if foreground:
                 cell.fg = color if tint is None else color.blend(cell.fg,tint)
             if background:
                 cell.bg = color if tint is None else color.blend(cell.bg,tint)
-
             idx += 1
 
 # ------------------------------------------------------------

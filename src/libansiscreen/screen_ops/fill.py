@@ -11,40 +11,57 @@ c256=create_ansi_256_palette()
 
 def fill(filldata) -> Cell:
     c=Cell('X', Color(255,0,0), None, 0)
-    if isInstance(filldata, Color):
+    if isinstance(filldata, Color):
         return Cell(G.BLOCK_FULL, filldata,None,0)
-    elif isInstance(filldata, Cell):
+    elif isinstance(filldata, Cell):
         return filldata
-    elif isInstance(filldata, int):
+    elif isinstance(filldata, int):
         return Cell(G.BLOCK_FULL, c256[abs(filldata)%256],None,0)
-    elif isInstance(filldata, dict):
+    elif isinstance(filldata, dict):
         if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
             s=filldata['screen']
             x=int(filldata['x'])
             y=int(filldata['y'])
-            if isInstance(s, Screen):
+            if isinstance(s, Screen):
                 w=s.width
                 h.s.height()
                 return s.get_cell(x%w,y%h)
+        if all(k in filldata for k in [ 'gradient','type','x','y','w','h' ]):
+            g=filldata['gradient']
+            t=filldata['type']
+            x=int(filldata['x'])
+            y=int(filldata['y'])
+            w=int(filldata['w'])
+            h=int(filldata['h'])
+            c=Color(0,255,0)
+            return Cell(G.BLOCK_FULL,c,None,0)
     return c
 
 def block_fill(filldata) -> Color:
     c=Color(255,0,0)
-    if isInstance(filldata, Color):
+    if isinstance(filldata, Color):
         return filldata
-    elif isInstance(filldata, Cell):
+    elif isinstance(filldata, Cell):
         return filldata.fg
-    elif isInstance(filldata, int):
+    elif isinstance(filldata, int):
         return c256[abs(filldata)%256]
-    elif isInstance(filldata, dict):
+    elif isinstance(filldata, dict):
         if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
             s=filldata['screen']
             x=int(filldata['x'])
             y=int(filldata['y'])
-            if isInstance(s, Screen):
+            if isinstance(s, Screen):
                 w=s.width
                 h.s.height()*2
                 return s.pixelget(x%w, y%h)
-        pass
+        if all(k in filldata for k in [ 'gradient','type','x','y','w','h' ]):
+            g=filldata['gradient']
+            t=filldata['type']
+            x=int(filldata['x'])
+            y=int(filldata['y'])
+            w=int(filldata['w'])
+            h=int(filldata['h'])
+            c=Color(0,255,0)
+            return c
     return c
 

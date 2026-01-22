@@ -9,6 +9,9 @@ from libansiscreen.screen_ops.prim import (
     vline,
     box,
     stamp_from_screen,
+    char_flood_fill,
+    char_rectangle,
+    char_ellipse
 )
 
 # Glyph definitions (as you currently use them)
@@ -85,6 +88,23 @@ def build_block_box_and_stamp() -> Screen:
 
     return stamp
 
+def build_ellipse() -> Screen:
+    screen=Screen(width=40)
+    screen.char_ellipse(20,12,8,8,Color(255,0,128))
+    return screen
+
+def build_rectangle() -> Screen:
+    screen=Screen(width=40)
+    screen.char_rectangle(5,2,30,8,Color(0,255,128))
+    return screen
+
+def build_flood_fill() -> Screen:
+    screen=Screen(width=40)
+    cyan=Color(0,255,192)
+    yellow=Color(255,192,0)
+    screen.regular_polygon(10, 10, 7, 12, cyan)
+    screen.char_flood_fill(10,5, fill=yellow) 
+    return screen
 
 # ------------------------------------------------------------
 # Tests (pytest-facing, return None)
@@ -123,6 +143,9 @@ def main():
 
     emit(build_primitives_basic_composition(), "primitives_basic.ans")
     emit(build_block_box_and_stamp(), "primitives_stamp.ans")
+    emit(build_ellipse(), "primitives_ellipse.ans")
+    emit(build_rectangle(), "primitives_rectangle.ans")
+    emit(build_flood_fill(), "primitives_flood_fillt.ans")
 
     print("Done.")
 

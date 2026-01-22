@@ -22,8 +22,7 @@ def emit(screen: Screen, name: str):
 
 def load_screen(path: Path) -> Screen:
     screen = Screen(width=80)
-    parser = ANSIParser(screen)
-    parser.feed(path.read_bytes())
+    screen.print(path.read_bytes())
     return screen
 
 

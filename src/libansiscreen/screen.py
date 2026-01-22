@@ -11,7 +11,6 @@ from .color.palette import create_ansi_16_palette
 # ----------------------------------------------------------------------
 # Palette-derived defaults (single source of truth)
 # ----------------------------------------------------------------------
-
 _ANSI16 = create_ansi_16_palette()
 
 DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
@@ -31,20 +30,16 @@ class Screen:
     # ------------------------------------------------------------------
     # Construction
     # ------------------------------------------------------------------
-
     def __init__(self, width: int):
         if width <= 0:
             raise ValueError("Screen width must be > 0")
-
         self.width: int = width
         self.rows: List[List[Cell]] = []
         self.cursor: Cursor = Cursor()
-
         # Current graphics state (SGR-like)
         self.current_fg: Color = DEFAULT_FG
         self.current_bg: Color = DEFAULT_BG
         self.current_attrs: int = 0
-
     # ------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------
@@ -57,7 +52,6 @@ class Screen:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-
     def _ensure_row(self, y: int) -> None:
         """Ensure row y exists."""
         while y >= len(self.rows):
@@ -69,7 +63,6 @@ class Screen:
     # ------------------------------------------------------------------
     # Cell access
     # ------------------------------------------------------------------
-
     def get_cell(self, x: int, y: int) -> Optional[Cell]:
         self._ensure_row(y)
         if y < 0 or y >= len(self.rows):
@@ -94,6 +87,7 @@ class Screen:
                 attrs=attrs,
             )
         )
+
     # ------------------------------------------------------------------
     # Cursor control (ANSI semantics)
     # ------------------------------------------------------------------
@@ -138,7 +132,6 @@ class Screen:
     # ------------------------------------------------------------------
     # Line / carriage control
     # ------------------------------------------------------------------
-
     def carriage_return(self) -> None:
         self.cursor.x = 0
 
@@ -154,7 +147,6 @@ class Screen:
     # ------------------------------------------------------------------
     # Graphics state (SGR-like)
     # ------------------------------------------------------------------
-
     def set_foreground(self, color: Color) -> None:
         self.current_fg = color
 
@@ -182,7 +174,6 @@ class Screen:
     # ------------------------------------------------------------------
     # Writing operations
     # ------------------------------------------------------------------
-
     def put_char(self, char: str) -> None:
         #if type(char != str):
         #    raise ValueError("put_char expects a single character" + str(char))
@@ -216,10 +207,14 @@ class Screen:
             self.cursor.y += 1
             self._ensure_row(self.cursor.y)
 
+    def print(self, s):
+        from libansiscreen.parser.ansi_parser import ANSIParser
+        parser=ANSIParser(self)
+        parser.feed(s)
+
     # ------------------------------------------------------------------
     # Clearing operations
     # ------------------------------------------------------------------
-
     def cls(self) -> None:
         """
         Clear screen, reset cursor and graphics state.
@@ -248,22 +243,30 @@ class Screen:
         for y in range(self.cursor.y + 1, len(self.rows)):
             self.rows[y] = [Cell() for _ in range(self.width)]
 
-    def copy(self, box=None):
+    # ------------------------------------------------------------------
+    # Clip stuff
+    # ------------------------------------------------------------------
+    def copy(self, box = None):
         from libansiscreen.screen_ops.copy import copy
         return copy(self, box)
 
-    def clear(self, box=None):
+    def clear(self, box = None):
         from libansiscreen.screen_ops.clear import clear
-        clear(self, box)
+        return clear(self, box)
 
-    def paste(self, src, box=None, **kwargs):
+    def paste(dst, src, *, box = None, transparent_char = None,
+        transparent_fg = None, transparent_bg = None,
+        transparent_attrs = None,) -> None:
         from libansiscreen.screen_ops.paste import paste
-        paste(self, src, box=box, **kwargs)
+        return(dst,src,box,transparent_char,transparent_fg,transparent_bg,transparent_attrs)
 
-    def cut(self, box=None):
+    def clear(self, box = None):
         from libansiscreen.screen_ops.cut import cut
         return cut(self, box)
 
+    # ------------------------------------------------------------------
+    # coloring
+    # ------------------------------------------------------------------
     def colorize(
         self,
         gradient,
@@ -279,6 +282,9 @@ class Screen:
                           background=background, only_if_set=only_if_set,
                           tint=tint, direction=direction)
 
+    # ------------------------------------------------------------------
+    # block drawing
+    # ------------------------------------------------------------------
     def pixel(self, x: int, y: int, color):
         from libansiscreen.screen_ops.pixelplot import pixelplot
         return pixelplot(self, x, y, color)
@@ -343,3 +349,18 @@ class Screen:
     def draw_ellipse(self, cx, cy, rx, ry, fill=None):
         from libansiscreen.screen_ops.pixelplot import draw_ellipse
         return draw_ellipse(self, cx, cy, rx, ry, fill)
+
+    # ------------------------------------------------------------------
+    # full-block drawing
+    # ------------------------------------------------------------------
+    def char_flood_fill(self, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
+        from libansiscreen.screen_ops.prim import char_flood_fill
+        return char_flood_fill(self, x_seed, y_seed, ignore_fg_color, ignore_bg_color, fill=fill)
+
+    def char_rectangle(self,x1, y1, x2, y2,fill=None):
+        from libansiscreen.screen_ops.prim import char_rectangle
+        return char_rectangle(self,x1, y1, x2, y2,fill)
+
+    def char_ellipse(self, cx, cy, rx, ry, fill=None):
+        from libansiscreen.screen_ops.prim import char_ellipse
+        return char_ellipse(self, cx, cy, rx, ry, fill)

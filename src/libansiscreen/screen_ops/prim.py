@@ -12,7 +12,7 @@ from libansiscreen import cell as C
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
 from libansiscreen.color.palette import create_ansi_16_palette
-from libansiscreen.screen_ops.fill import fill
+from libansiscreen.screen_ops.fill import fill as cell_fill
 _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
 DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black
@@ -71,21 +71,17 @@ def hline(
 ) -> Screen:
     if x2 < x1:
         x1, x2 = x2, x1
-
     width = x2 - x1 + 1
     scr = screen or Screen(width)
     yy = y if screen else 0
-
     for i, x in enumerate(range(x1, x2 + 1)):
         role = "start" if i == 0 else "end" if i == width - 1 else "segment"
         g = resolve_glyph(glyphs.get(role))
         if g is None:
             continue
-
         cell = scr.get_cell(x, yy)
         char = merge_glyph(cell.char, g) if merge else g
         scr.set_cell(x, yy, Cell(char=char))
-
     return scr
 
 # ============================================================
@@ -103,21 +99,17 @@ def vline(
 ) -> Screen:
     if y2 < y1:
         y1, y2 = y2, y1
-
     height = y2 - y1 + 1
     scr = screen or Screen(1)
     xx = x if screen else 0
-
     for i, y in enumerate(range(y1, y2 + 1)):
         role = "start" if i == 0 else "end" if i == height - 1 else "segment"
         g = resolve_glyph(glyphs.get(role))
         if g is None:
             continue
-
         cell = scr.get_cell(xx, y)
         char = merge_glyph(cell.char, g) if merge else g
         scr.set_cell(xx, y, Cell(char=char))
-
     return scr
 
 # ============================================================
@@ -132,14 +124,12 @@ def box(
     screen: Optional[Screen] = None,
 ) -> Screen:
     scr = screen or Screen(w)
-
     for y in range(h):
         for x in range(w):
             is_top = y == 0
             is_bottom = y == h - 1
             is_left = x == 0
             is_right = x == w - 1
-
             if is_top and is_left:
                 key = "tl"
             elif is_top and is_right:
@@ -154,13 +144,10 @@ def box(
                 key = "v"
             else:
                 key = "fill"
-
             g = resolve_glyph(glyphs.get(key))
             if g is None:
                 continue
-
             scr.set_cell(x, y, Cell(char=g))
-
     return scr
 
 # ============================================================
@@ -179,9 +166,7 @@ def stamp_from_screen(
     else:
         x0, y0 = 0, 0
         w, h = source.width, source.height
-
     out = Screen(w)
-
     # Copy / punch transparency
     for y in range(h):
         for x in range(w):
@@ -189,24 +174,20 @@ def stamp_from_screen(
             if src.char in transparent_chars:
                 continue
             out.set_cell(x, y, src.copy())
-
     # Optional border
     if border_bg:
         bg = border_bg  # default: black, passed explicitly
-
         def border_cell():
             return Cell(char=" ", bg=bg)
-
         for x in range(w):
             out.set_cell(x, 0, border_cell())
             out.set_cell(x, h - 1, border_cell())
         for y in range(h):
             out.set_cell(0, y, border_cell())
             out.set_cell(w - 1, y, border_cell())
-
     return out
 
-def flood_fill_char_mask(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
+def char_flood_fill(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
     """
     Generate a mask from seed point that is complement of seed,
     respecting block types and optionally color/char matches.
@@ -232,6 +213,7 @@ def flood_fill_char_mask(screen, x_seed, y_seed, ignore_fg_color=False, ignore_b
             fill_pixel = (cell.char == seed_cell.char)
         if fill_pixel and color_ok:
             mask.set_cell(x, y, Cell(G.BLOCK_FULL, None, None))
+            screen.set_cell(x, y, cell_fill(fill))
         else:
             mask.set_cell(x, y, Cell('x', None, None))
             continue
@@ -246,6 +228,7 @@ def char_rectangle(screen,x1, y1, x2, y2, fill=DEFAULT_FG):
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
             mask.set_cell(x,y,Cell(G.BLOCK_FULL,None, None))
+            screen.set_cell(x, y, cell_fill(fill))
     return mask
 
 def char_ellipse(screen,cx, cy, rx, ry,fill=DEFAULT_FG):
@@ -270,6 +253,7 @@ def char_ellipse(screen,cx, cy, rx, ry,fill=DEFAULT_FG):
             x_right = min(screen_w - 1, cx + dx) 
         for x in range(x_left,x_right+1):
             mask.set_cell(x,y,Cell(G.BLOCK_FULL,None,None))
+            screen.set_cell(x, y, cell_fill(fill))
     return mask
 
 

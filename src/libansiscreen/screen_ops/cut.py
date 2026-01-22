@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Optional, Tuple
 
 from libansiscreen.screen import Screen
-from libansiscreen.ops.copy import copy
-from libansiscreen.ops.clear import clear
+from libansiscreen.screen_ops.copy import copy
+from libansiscreen.screen_ops.clear import clear
 
 
 Box = Tuple[int, int, int, int]
