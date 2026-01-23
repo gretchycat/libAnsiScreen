@@ -25,7 +25,7 @@ def emit(screen: Screen, name: str):
 # ------------------------------------------------------------
 
 from libansiscreen.screen_ops.prim import box
-from libansiscreen.screen_ops.clear import clear
+from libansiscreen.screen_ops.clip import clear
 from libansiscreen.renderer.ansi_emitter import Box
 from libansiscreen.screen_ops.glyph_defs import BOX_BLOCK
 

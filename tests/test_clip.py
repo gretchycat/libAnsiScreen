@@ -5,9 +5,9 @@ from libansiscreen.screen import Screen
 from libansiscreen.parser.ansi_parser import ANSIParser
 from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 
-from libansiscreen.screen_ops.copy import copy as screen_copy
-from libansiscreen.screen_ops.clear import clear as screen_clear
-from libansiscreen.screen_ops.paste import paste as screen_paste
+from libansiscreen.screen_ops.clip import copy as screen_copy
+from libansiscreen.screen_ops.clip import clear as screen_clear
+from libansiscreen.screen_ops.clip import paste as screen_paste
 from pathlib import Path
 OUT = Path("out")
 OUT.mkdir(exist_ok=True)

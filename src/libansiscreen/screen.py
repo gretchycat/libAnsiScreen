@@ -247,21 +247,21 @@ class Screen:
     # Clip stuff
     # ------------------------------------------------------------------
     def copy(self, box = None):
-        from libansiscreen.screen_ops.copy import copy
+        from libansiscreen.screen_ops.clip import copy
         return copy(self, box)
 
     def clear(self, box = None):
-        from libansiscreen.screen_ops.clear import clear
+        from libansiscreen.screen_ops.clip import clear
         return clear(self, box)
 
     def paste(dst, src, *, box = None, transparent_char = None,
         transparent_fg = None, transparent_bg = None,
         transparent_attrs = None,) -> None:
-        from libansiscreen.screen_ops.paste import paste
+        from libansiscreen.screen_ops.clip import paste
         return(dst,src,box,transparent_char,transparent_fg,transparent_bg,transparent_attrs)
 
     def clear(self, box = None):
-        from libansiscreen.screen_ops.cut import cut
+        from libansiscreen.screen_ops.clip import cut
         return cut(self, box)
 
     # ------------------------------------------------------------------

@@ -145,7 +145,7 @@ def main():
     emit(build_block_box_and_stamp(), "primitives_stamp.ans")
     emit(build_ellipse(), "primitives_ellipse.ans")
     emit(build_rectangle(), "primitives_rectangle.ans")
-    emit(build_flood_fill(), "primitives_flood_fillt.ans")
+    emit(build_flood_fill(), "primitives_flood_fill.ans")
 
     print("Done.")
 

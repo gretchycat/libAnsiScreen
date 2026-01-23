@@ -31,7 +31,7 @@ def apply_hgrad(
             idx = int(x * (n - 1) / (width - 1))
             color = gradient[idx]
             if foreground:
-                cell.fg = color if tint is None else color.blend(cell.fg,tint
+                cell.fg = color if tint is None else color.blend(cell.fg,tint)
             if background:
                 cell.bg = color if tint is None else color.blend(cell.bg,tint)
 
@@ -63,7 +63,7 @@ def apply_vgrad(
             if only_if_set and cell.char is None:
                 continue
             if foreground:
-                cell.fg = color if tint is None else color.blend(cell.fg,tint
+                cell.fg = color if tint is None else color.blend(cell.fg,tint)
             if background:
                 cell.bg = color if tint is None else color.blend(cell.bg,tint)
 
