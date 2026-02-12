@@ -7,7 +7,6 @@ from .cursor import Cursor
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
 
-
 # ----------------------------------------------------------------------
 # Palette-derived defaults (single source of truth)
 # ----------------------------------------------------------------------
@@ -15,7 +14,6 @@ _ANSI16 = create_ansi_16_palette()
 
 DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
-
 
 class Screen:
     """
@@ -30,11 +28,12 @@ class Screen:
     # ------------------------------------------------------------------
     # Construction
     # ------------------------------------------------------------------
-    def __init__(self, width: int):
+    def __init__(self, width: int, height=1):
         if width <= 0:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
         self.rows: List[List[Cell]] = []
+        self._ensure_row(height)
         self.cursor: Cursor = Cursor()
         # Current graphics state (SGR-like)
         self.current_fg: Color = DEFAULT_FG
@@ -59,6 +58,17 @@ class Screen:
 
     def _clamp_x(self, x: int) -> int:
         return max(0, min(self.width - 1, x))
+
+    def resize(self, width, height):
+        if width>0:
+            if width>self.width:
+                pass    #add cells
+            self.width=width
+        if height>0:
+            self._ensure_row(height)
+            if len(self.rows)>height:
+                for y in range(height,len(self.rows)):
+                    pass #delete row
 
     # ------------------------------------------------------------------
     # Cell access
@@ -260,7 +270,7 @@ class Screen:
         from libansiscreen.screen_ops.clip import paste
         return(dst,src,box,transparent_char,transparent_fg,transparent_bg,transparent_attrs)
 
-    def clear(self, box = None):
+    def cut(self, box = None):
         from libansiscreen.screen_ops.clip import cut
         return cut(self, box)
 
