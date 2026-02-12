@@ -2,12 +2,8 @@ from pathlib import Path
 
 import sys
 from libansiscreen.screen import Screen
-from libansiscreen.parser.ansi_parser import ANSIParser
 from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 
-from libansiscreen.screen_ops.clip import copy as screen_copy
-from libansiscreen.screen_ops.clip import clear as screen_clear
-from libansiscreen.screen_ops.clip import paste as screen_paste
 from pathlib import Path
 OUT = Path("out")
 OUT.mkdir(exist_ok=True)
@@ -18,13 +14,10 @@ def emit(screen: Screen, name: str):
     path.write_text(ansi)
     print(f"Wrote {path}")
 
-
-
 def load_screen(path: Path) -> Screen:
     screen = Screen(width=80)
     screen.print(path.read_bytes())
     return screen
-
 
 def middle_box(screen: Screen):
     """
@@ -35,7 +28,6 @@ def middle_box(screen: Screen):
     w = screen.width // 2
     h = screen.height // 2
     return (x, y, w, h)
-
 
 def lower_right_origin(screen: Screen):
     """
