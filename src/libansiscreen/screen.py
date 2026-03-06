@@ -32,6 +32,8 @@ class Screen:
         if width <= 0:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
+        self.rows=[]
+        self._ensure_row(height)
         self.rows: List[List[Cell]] = []
         self.cursor: Cursor = Cursor()
         # Current graphics state (SGR-like)

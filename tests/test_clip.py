@@ -51,6 +51,8 @@ def test_clip_pipeline():
     # --- COPY ---
     buf = screen.copy(box)
     emit(buf, Path("test_clip_copy_truecolor.ans"))
+    buf2 = screen.copy()
+    emit(buf2, Path("test_clip_fullcopy_truecolor.ans"))
 
     # --- CLEAR ---
     screen.clear(box)
