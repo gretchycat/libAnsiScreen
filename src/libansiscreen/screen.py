@@ -33,7 +33,6 @@ class Screen:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
         self.rows: List[List[Cell]] = []
-        self._ensure_row(height)
         self.cursor: Cursor = Cursor()
         # Current graphics state (SGR-like)
         self.current_fg: Color = DEFAULT_FG
@@ -61,7 +60,6 @@ class Screen:
 
     def resize(self, width, height):
         if height>0:
-            self._ensure_row(height)
             while len(self.rows)>height:
                 self.rows.pop()
         if width>0:
@@ -106,14 +104,12 @@ class Screen:
     def cursor_goto(self, x: int, y: int) -> None:
         self.cursor.x = self._clamp_x(x)
         self.cursor.y = max(0, y)
-        self._ensure_row(self.cursor.y)
 
     def cursor_up(self, n: int = 1) -> None:
         self.cursor.y = max(0, self.cursor.y - n)
 
     def cursor_down(self, n: int = 1) -> None:
         self.cursor.y += n
-        self._ensure_row(self.cursor.y)
 
     def cursor_forward(self, n: int = 1) -> None:
         self.cursor.x = self._clamp_x(self.cursor.x + n)
@@ -124,7 +120,6 @@ class Screen:
     def cursor_next_line(self, n: int = 1) -> None:
         self.cursor.x = 0
         self.cursor.y += n
-        self._ensure_row(self.cursor.y)
 
     def cursor_prev_line(self, n: int = 1) -> None:
         self.cursor.x = 0
@@ -139,7 +134,6 @@ class Screen:
     def cursor_restore(self) -> None:
         self.cursor.restore()
         self.cursor.x = self._clamp_x(self.cursor.x)
-        self._ensure_row(self.cursor.y)
 
     # ------------------------------------------------------------------
     # Line / carriage control
@@ -149,12 +143,10 @@ class Screen:
 
     def line_feed(self) -> None:
         self.cursor.y += 1
-        #self._ensure_row(self.cursor.y)
 
     def newline(self) -> None:
         self.cursor.x = 0
         self.cursor.y += 1
-        #self._ensure_row(self.cursor.y)
 
     # ------------------------------------------------------------------
     # Graphics state (SGR-like)
