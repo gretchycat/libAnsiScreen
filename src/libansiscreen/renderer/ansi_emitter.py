@@ -76,8 +76,11 @@ class ANSIEmitter:
     # Public API
     # -------------------------
 
-    def emit(self, screen: Screen, box: Optional[Box] = None) -> str:
-        out: List[str] = []
+    def emit_diff(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:
+        return self.emit(screen, box,raw)
+
+    def emit(self, screen: Screen, box: Optional[Box] = None, raw=False) -> str:
+        out = []
         if box is None:
             start_x, start_y = 0, 0
             width, height = screen.width, screen.height
@@ -93,26 +96,31 @@ class ANSIEmitter:
             attrs=0,
         )
         for row in range(height):
-            y = start_y + row
             for col in range(width):
                 x = start_x + col
+                y = start_y + row
+                if raw:
+                    out[-1]+=f"\x1b[{y+1};{x+1}H"
                 cell = screen.get_cell(x, y) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
                 if seq:
-                    out.append(seq)
+                    out[-1]+=(seq)
                 ch = cell.char
                 if self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
-                out.append(ch or ' ')
-            out.append("\x1b[0m")
-            out.append("\n")
+                out[-1]+=(ch or 'X')
+            out[-1]+=("\x1b[0m")
+            if row<height:
+                out.append('')
             prev = TerminalState(
                 fg=AnsiColorState("ansi16", (7,0)),
                 bg=AnsiColorState("ansi16", (0,0)),
                 attrs=0,
             )
-        return "".join(out)
+        if raw:
+            return"".join(out)
+        return "\n".join(out)
 
         # -------------------------
         # Compile: Cell -> Desired TerminalState

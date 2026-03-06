@@ -60,15 +60,17 @@ class Screen:
         return max(0, min(self.width - 1, x))
 
     def resize(self, width, height):
-        if width>0:
-            if width>self.width:
-                pass    #add cells
-            self.width=width
         if height>0:
             self._ensure_row(height)
-            if len(self.rows)>height:
-                for y in range(height,len(self.rows)):
-                    pass #delete row
+            while len(self.rows)>height:
+                self.rows.pop()
+        if width>0:
+            if width>self.width:
+                for y in range(height):
+                    for add in range(len(self.rows[y]), width):
+                        self.rows[y].append(Cell())
+        self.width=width
+
 
     # ------------------------------------------------------------------
     # Cell access
@@ -147,12 +149,12 @@ class Screen:
 
     def line_feed(self) -> None:
         self.cursor.y += 1
-        self._ensure_row(self.cursor.y)
+        #self._ensure_row(self.cursor.y)
 
     def newline(self) -> None:
         self.cursor.x = 0
         self.cursor.y += 1
-        self._ensure_row(self.cursor.y)
+        #self._ensure_row(self.cursor.y)
 
     # ------------------------------------------------------------------
     # Graphics state (SGR-like)
@@ -189,16 +191,13 @@ class Screen:
         #    raise ValueError("put_char expects a single character" + str(char))
         if len(char) != 1:
             raise ValueError("put_char expects a single character" + char)
-
         self._ensure_row(self.cursor.y)
-
         self.rows[self.cursor.y][self.cursor.x] = Cell(
             char=char,
             fg=self.current_fg,
             bg=self.current_bg,
             attrs=self.current_attrs,
         )
-
         self._advance_cursor()
 
     def put_text(self, text: str) -> None:
@@ -215,7 +214,6 @@ class Screen:
         if self.cursor.x >= self.width:
             self.cursor.x = 0
             self.cursor.y += 1
-            self._ensure_row(self.cursor.y)
 
     def print(self, s):
         from libansiscreen.parser.ansi_parser import ANSIParser
@@ -258,11 +256,11 @@ class Screen:
     # ------------------------------------------------------------------
     def copy(self, box = None):
         from libansiscreen.screen_ops.clip import copy
-        return copy(self, box)
+        return copy(self, box=box)
 
     def clear(self, box = None):
         from libansiscreen.screen_ops.clip import clear
-        return clear(self, box)
+        return clear(self, box=box)
 
     def paste(dst, src, *, box = None, transparent_char = None,
         transparent_fg = None, transparent_bg = None,
@@ -272,7 +270,7 @@ class Screen:
 
     def cut(self, box = None):
         from libansiscreen.screen_ops.clip import cut
-        return cut(self, box)
+        return cut(self, box=box)
 
     # ------------------------------------------------------------------
     # coloring

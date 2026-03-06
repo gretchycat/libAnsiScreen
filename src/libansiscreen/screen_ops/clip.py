@@ -60,9 +60,8 @@ def copy(screen, box: Optional[Box] = None) -> Screen:
     If box is None, returns a full deep copy of the screen.
     Box is defined as (x, y, width, height).
     """
-    print(screen)
     if box is None:
-        box=Tuple[0,0,screen.width,screen.height]
+        box=(0,0,screen.width,screen.height)
     x0, y0, w, h = box
     if w <= 0 or h <= 0:
         raise ValueError("Box width and height must be positive")

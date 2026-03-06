@@ -1,6 +1,7 @@
 #!/bin/bash
 PWD=$(pwd)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ERR=0
 cd "$SCRIPT_DIR"
 for t in test_*.py; do
 	python3 "$t" thetis.ans
@@ -8,7 +9,9 @@ for t in test_*.py; do
 		echo -e "\033[1;32m=== ${t} passed\033[0m"
 	else
 		echo -e "\033[1;31m=== ${t} failed\033[0m"
+		ERR=1
 	fi
 done
 
 cd ${PWD}
+exit $ERR
