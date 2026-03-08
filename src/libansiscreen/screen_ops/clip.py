@@ -67,9 +67,6 @@ def copy(screen, box: Optional[Box] = None) -> Screen:
         raise ValueError("Box width and height must be positive")
     if w <= 0:
         raise ValueError("Box width must be positive")
-    if h <= 0:
-        pass
-        #raise ValueError("Box height must be positive")
     new_screen = Screen(w)
     for dy in range(h):
         sy = y0 + dy
