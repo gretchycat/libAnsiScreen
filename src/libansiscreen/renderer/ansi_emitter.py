@@ -96,17 +96,17 @@ class ANSIEmitter:
             attrs=0,
         )
         
-        for row in range(start_y, height):
+        for row in range(start_y, height-1):
             y = start_y + row
             if raw:
-                out[-1]+=f"\x1b[{y+1-start_y};{1}H"
+                out[-1]+=f"\x1b[{y+start_y+1};{1}H"
             for col in range(start_x,width):
                 x = start_x + col
                 cell = screen.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
                 if seq:
-                    out[-1]+=(seq)
+                    out[-1]+=seq
                 ch = cell.char
                 if self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"

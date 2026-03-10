@@ -62,14 +62,14 @@ class Screen:
 
     def resize(self, width, height):
         if height>0:
-            while len(self.rows)>height+1:
+            while len(self.rows)>height:
                 self.rows.pop()
             self._ensure_row(height)
         if width>0:
-            addCells=width-self.width+1
+            addCells=width-self.width
             self.width=width
             if addCells>0:
-                for y in range(height):
+                for y in range(height): #TODO fix me
                     for _ in range(addCells):
                         self.rows[y].append(Cell())
 
