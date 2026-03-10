@@ -62,7 +62,7 @@ class Screen:
 
     def resize(self, width, height):
         if height>0:
-            while len(self.rows)>height:
+            while len(self.rows)>height+1:
                 self.rows.pop()
             self._ensure_row(height)
         if width>0:
