@@ -85,8 +85,8 @@ class ANSIEmitter:
             start_x, start_y = 0, 0
             width, height = screen.width, screen.height
         else:
-            start_x, start_y = box.x, box.y
-            width, height = box.width, box.height
+            start_x, start_y = max(0,box.x), max(0,box.y)
+            width, height = min(box.width,screen.width), miin(box.height,screen.height)
         # hard reset + home
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
@@ -95,13 +95,14 @@ class ANSIEmitter:
             bg=AnsiColorState("ansi16", (0,)),
             attrs=0,
         )
-        for row in range(height):
+        
+        for row in range(start_y, height):
             y = start_y + row
             if raw:
-                out[-1]+=f"\x1b[{y+1};{1}H"
-            for col in range(width):
+                out[-1]+=f"\x1b[{y+1-start_y};{1}H"
+            for col in range(start_x,width):
                 x = start_x + col
-                cell = screen.get_cell(x, y) or Cell()
+                cell = screen.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
                 if seq:

@@ -32,9 +32,8 @@ class Screen:
         if width <= 0:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
-        self.rows=[]
-        self._ensure_row(height)
         self.rows: List[List[Cell]] = []
+        self._ensure_row(height)
         self.cursor: Cursor = Cursor()
         # Current graphics state (SGR-like)
         self.current_fg: Color = DEFAULT_FG
@@ -55,7 +54,8 @@ class Screen:
     def _ensure_row(self, y: int) -> None:
         """Ensure row y exists."""
         while y >= len(self.rows):
-            self.rows.append([Cell() for _ in range(self.width)])
+            #self.rows.append([Cell() for _ in range(self.width)])
+            self.rows.append([Cell() for _ in range(500)]) #FIXME
 
     def _clamp_x(self, x: int) -> int:
         return max(0, min(self.width - 1, x))
@@ -64,13 +64,14 @@ class Screen:
         if height>0:
             while len(self.rows)>height:
                 self.rows.pop()
+            self._ensure_row(height)
         if width>0:
-            if width>self.width:
+            addCells=width-self.width+1
+            self.width=width
+            if addCells>0:
                 for y in range(height):
-                    for add in range(len(self.rows[y]), width):
+                    for _ in range(addCells):
                         self.rows[y].append(Cell())
-        self.width=width
-
 
     # ------------------------------------------------------------------
     # Cell access
