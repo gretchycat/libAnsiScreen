@@ -33,12 +33,12 @@ class Screen:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
         self.rows: List[List[Cell]] = []
-        self._ensure_row(height)
         self.cursor: Cursor = Cursor()
         # Current graphics state (SGR-like)
         self.current_fg: Color = DEFAULT_FG
         self.current_bg: Color = DEFAULT_BG
         self.current_attrs: int = 0
+        self._ensure_row(height)
     # ------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------
@@ -55,7 +55,11 @@ class Screen:
         """Ensure row y exists."""
         while y >= len(self.rows):
             #self.rows.append([Cell() for _ in range(self.width)])
-            self.rows.append([Cell() for _ in range(500)]) #FIXME
+            self.rows.append([Cell(
+                char=' ',
+                fg=self.current_fg,
+                bg=self.current_bg,
+                attrs=self.current_attrs,) for _ in range(500)]) #FIXME
 
     def _clamp_x(self, x: int) -> int:
         return max(0, min(self.width - 1, x))
@@ -71,7 +75,11 @@ class Screen:
             if addCells>0:
                 for y in range(height): #TODO fix me
                     for _ in range(addCells):
-                        self.rows[y].append(Cell())
+                        self.rows[y].append(Cell(
+                                char=' ',
+                                fg=self.current_fg,
+                                bg=self.current_bg,
+                                attrs=self.current_attrs))
 
     # ------------------------------------------------------------------
     # Cell access
