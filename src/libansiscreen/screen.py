@@ -215,6 +215,21 @@ class Screen:
         parser=ANSIParser(self)
         parser.feed(s)
 
+    def emit(self, box=None, raw=False):
+        from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+        emitter=ANSIEmitter()
+        return emitter.emit(self, box=box, raw=raw )
+
+    def __str__(self, box=None, raw=False):
+        from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+        emitter=ANSIEmitter()
+        return emitter.emit(self, box=box, raw=raw )
+
+    def emit_diff(self, prev, box=None, raw=False):
+        from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+        emitter=ANSIEmitter()
+        return emitter.emit_diff(self, prev, box=box, raw=raw )
+
     # ------------------------------------------------------------------
     # Clearing operations
     # ------------------------------------------------------------------
@@ -261,7 +276,11 @@ class Screen:
         transparent_fg = None, transparent_bg = None,
         transparent_attrs = None,) -> None:
         from libansiscreen.screen_ops.clip import paste
-        return(dst,src,box,transparent_char,transparent_fg,transparent_bg,transparent_attrs)
+        return paste(dst,src,box=box,
+                     transparent_char=transparent_char,
+                     transparent_fg=transparent_fg,
+                     transparent_bg=transparent_bg,
+                     transparent_attrs=transparent_attrs)
 
     def cut(self, box = None):
         from libansiscreen.screen_ops.clip import cut
@@ -289,6 +308,10 @@ class Screen:
     # block drawing
     # ------------------------------------------------------------------
     def pixel(self, x: int, y: int, color):
+        from libansiscreen.screen_ops.pixelplot import pixelplot
+        return pixelplot(self, x, y, color)
+
+    def plot(self, x: int, y: int, color):
         from libansiscreen.screen_ops.pixelplot import pixelplot
         return pixelplot(self, x, y, color)
 

@@ -36,6 +36,18 @@ class Color:
             int(round(bf * 255)),
         )
 
+    def __ixnit__(self, v):
+        if type(v)==int:
+            pass
+        if type(v)==str:
+            pass
+        if type(v)==tuple:
+            pass
+        if type(v)==dict:
+            pass
+        if isInstance(Color):
+            pass
+
     def __post_init__(self):
         if not (0 <= self.r <= 255):
             raise ValueError(f"Invalid r value: {self.r}")

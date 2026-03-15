@@ -11,7 +11,6 @@ quantization is an explicit policy decision and must live elsewhere.
 from typing import Dict, Optional
 from .rgb import Color
 
-
 class Palette:
     """
     Represents an indexed color palette with exact RGB mappings.

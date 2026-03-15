@@ -49,7 +49,7 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
                     Cell(
                         char=None,
                         fg=None,
-                        bg=Color(0,0,0),
+                        bg=screen.current_bg,
                         attrs=0,
                     )
                 )
@@ -121,7 +121,6 @@ def paste(
             else min(w, src.width)
         )
         max_h = src.height if h is None else min(h, src.height)
-
     if max_w <= 0 or max_h <= 0:
         return
 
