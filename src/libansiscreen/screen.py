@@ -53,7 +53,7 @@ class Screen:
     # ------------------------------------------------------------------
     def _ensure_row(self, y: int) -> None:
         """Ensure row y exists."""
-        while y > len(self.rows):
+        while y >= len(self.rows):
             #self.rows.append([Cell() for _ in range(self.width)])
             self.rows.append([Cell(
                 char=' ',
