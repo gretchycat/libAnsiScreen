@@ -149,7 +149,7 @@ class ANSIParser:
             if p[0] == 0:
                 self.screen.clear_to_end_of_screen()
             elif p[0] == 2:
-                self.screen.clear()
+                self.screen.cls()
 
         elif final == "K":  # EL
             self.screen.clear_to_end_of_line()
