@@ -245,9 +245,11 @@ class Screen:
         """
         Clear screen, reset cursor and graphics state.
         """
+        y=len(self.rows)
         self.rows.clear()
         self.cursor.reset()
-        self.reset_graphics()
+        self._ensure_row(y)
+        #self.reset_graphics()
 
     def clear_row(self, y: int) -> None:
         self._ensure_row(y)
