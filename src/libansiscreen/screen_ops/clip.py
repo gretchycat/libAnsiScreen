@@ -129,7 +129,7 @@ def paste(
 
         # Grow destination vertically if needed
         if dy >= dst.height:
-            dst.ensure_height(dy + 1)
+            dst._ensure_row(dy + 1)
 
         for sx in range(max_w):
             dx = dst_x + sx
