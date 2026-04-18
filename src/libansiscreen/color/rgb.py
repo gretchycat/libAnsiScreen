@@ -36,17 +36,30 @@ class Color:
             int(round(bf * 255)),
         )
 
-    def __ixnit__(self, v):
+    def hex(self, value: str) -> Color:
+        value = value.lstrip("#")
+        if len(value)==6:
+                self.rgb(int(value[0:2], 16),
+                int(value[2:4], 16),
+                int(value[4:6], 16))
+        elif len(value)==3:
+                self.rgb(int(value[0:1], 16)*16,
+                int(value[1:2], 16)*16,
+                int(value[2:3], 16)*16)
+    
+    def set(self, v):
         if type(v)==int:
-            pass
+            from .color.palette import create_ansi_256_palette
+            p=create_ansi_256_palette().get_colors()
+            self.set(p[v])
         if type(v)==str:
-            pass
+            c=self.hex(v)
         if type(v)==tuple:
-            pass
+            self.rgb(v[0], v[1], v[2])
         if type(v)==dict:
-            pass
+            self.rgb(v['r'], v['g'], v['b'])
         if isInstance(Color):
-            pass
+            self.rgb(v.r, v.g, v.b)
 
     def __post_init__(self):
         if not (0 <= self.r <= 255):
