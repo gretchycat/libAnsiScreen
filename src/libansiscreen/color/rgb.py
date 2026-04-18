@@ -53,7 +53,7 @@ class Color:
         if type(v)==int:
             from .color.palette import create_ansi_256_palette
             p=create_ansi_256_palette().get_colors()
-            return cls.set(p[v])
+            return cls.set(p[v%256])
         if type(v)==str:
             return cls.hex(v)
         if type(v)==tuple:
