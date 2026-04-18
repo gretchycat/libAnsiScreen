@@ -44,9 +44,9 @@ class Color:
                 int(value[2:4], 16),
                 int(value[4:6], 16))
         elif len(value)==3:
-                return cls.rgb(int(value[0:1], 16)*16,
-                int(value[1:2], 16)*16,
-                int(value[2:3], 16)*16)
+                return cls.rgb(int(value[0:1], 16)*17,
+                        int(value[1:2], 16)*17,
+                        int(value[2:3], 16)*17)
     
     @classmethod
     def set(cls, v):
