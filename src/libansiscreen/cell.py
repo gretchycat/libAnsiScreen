@@ -3,6 +3,7 @@ from typing import Optional
 
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
+from .color.palette import create_ansi_266_palette
 
 # ----------------------------------------------------------------------
 # ANSI attributes (bitmask)
@@ -47,6 +48,7 @@ class Cell:
     # --------------------------------------------------------------
     # Comparison helpers
     # --------------------------------------------------------------
+
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cell):
