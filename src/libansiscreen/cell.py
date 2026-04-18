@@ -3,7 +3,7 @@ from typing import Optional
 
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
-from .color.palette import create_ansi_266_palette
+from .color.palette import create_ansi_256_palette
 
 # ----------------------------------------------------------------------
 # ANSI attributes (bitmask)
