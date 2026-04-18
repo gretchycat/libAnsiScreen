@@ -36,30 +36,32 @@ class Color:
             int(round(bf * 255)),
         )
 
-    def hex(self, value: str) -> Color:
+    @classmethod
+    def hex(cls, value: str) -> Color:
         value = value.lstrip("#")
         if len(value)==6:
-                self.rgb(int(value[0:2], 16),
+                return cls.rgb(int(value[0:2], 16),
                 int(value[2:4], 16),
                 int(value[4:6], 16))
         elif len(value)==3:
-                self.rgb(int(value[0:1], 16)*16,
+                return cls.rgb(int(value[0:1], 16)*16,
                 int(value[1:2], 16)*16,
                 int(value[2:3], 16)*16)
     
-    def set(self, v):
+    @classmethod
+    def set(cls, v):
         if type(v)==int:
             from .color.palette import create_ansi_256_palette
             p=create_ansi_256_palette().get_colors()
-            self.set(p[v])
+            return cls.set(p[v])
         if type(v)==str:
-            c=self.hex(v)
+            return cls.hex(v)
         if type(v)==tuple:
-            self.rgb(v[0], v[1], v[2])
+            return cls.rgb(v[0], v[1], v[2])
         if type(v)==dict:
-            self.rgb(v['r'], v['g'], v['b'])
+            return cls.rgb(v['r'], v['g'], v['b'])
         if isInstance(Color):
-            self.rgb(v.r, v.g, v.b)
+            return cls.rgb(v.r, v.g, v.b)
 
     def __post_init__(self):
         if not (0 <= self.r <= 255):

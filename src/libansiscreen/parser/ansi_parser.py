@@ -26,6 +26,39 @@ from ..color.palette import (
 ANSI16 = create_ansi_16_palette()
 ANSI256 = create_ansi_256_palette()
 
+dec_special_graphics = {
+    '`': '\u25C6',  # ◆
+    'a': '\u2592',  # ▒
+    'b': '\u2409',  # ␉
+    'c': '\u240C',  # ␌
+    'd': '\u240D',  # ␍
+    'e': '\u240A',  # ␊
+    'f': '\u00B0',  # °
+    'g': '\u00B1',  # ±
+    'h': '\u2424',  # ␤
+    'i': '\u240B',  # ␋
+    'j': '\u2518',  # ┘
+    'k': '\u2510',  # ┐
+    'l': '\u250C',  # ┌
+    'm': '\u2514',  # └
+    'n': '\u253C',  # ┼
+    'o': '\u23BA',  # ⎺
+    'p': '\u23BB',  # ⎻
+    'q': '\u2500',  # ─
+    'r': '\u23BC',  # ⎼
+    's': '\u23BD',  # ⎽
+    't': '\u251C',  # ├
+    'u': '\u2524',  # ┤
+    'v': '\u2534',  # ┴
+    'w': '\u252C',  # ┬
+    'x': '\u2502',  # │
+    'y': '\u2264',  # ≤
+    'z': '\u2265',  # ≥
+    '{': '\u03C0',  # π
+    '|': '\u2260',  # ≠
+    '}': '\u00A3',  # £
+    '~': '\u00B7',  # ·
+}
 
 class ANSIParser:
     """
@@ -37,6 +70,11 @@ class ANSIParser:
     TEXT = 0
     ESC = 1
     CSI = 2
+    CHARSET_G0 = 3
+    CHARSET_G1 = 4
+    CHARSET_G2 = 5
+    CHARSET_G3 = 6
+    SZ = 7
 
     def __init__(self, screen: Screen):
         self.screen = screen
@@ -96,6 +134,11 @@ class ANSIParser:
         elif ch == "8":  # DECRC
             self.screen.cursor_restore()
             self.state = self.TEXT
+        #elif ch =='(':
+        #elif ch ==')':
+        #elif ch =='*':
+        #elif ch =='+':
+        #elif ch =='#':
         else:
             # Unsupported ESC sequence
             self.state = self.TEXT
