@@ -51,7 +51,7 @@ class Color:
     @classmethod
     def set(cls, v):
         if type(v)==int:
-            from .color.palette import create_ansi_256_palette
+            from .palette import create_ansi_256_palette
             p=create_ansi_256_palette().get_colors()
             return cls.set(p[v%256])
         if type(v)==str:
@@ -60,7 +60,7 @@ class Color:
             return cls.rgb(v[0], v[1], v[2])
         if type(v)==dict:
             return cls.rgb(v['r'], v['g'], v['b'])
-        if isInstance(Color):
+        if isinstance(v, Color):
             return cls.rgb(v.r, v.g, v.b)
 
     def __post_init__(self):
