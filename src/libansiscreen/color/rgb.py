@@ -17,6 +17,7 @@ class Color:
     r: int
     g: int
     b: int
+    a: int =255
 
     # ------------------------------------------------------------
     # Validation
@@ -62,6 +63,8 @@ class Color:
             return cls.rgb(v['r'], v['g'], v['b'])
         if isinstance(v, Color):
             return cls.rgb(v.r, v.g, v.b)
+    def copy(self):
+        return Color(self.r, self.g, self.b)
 
     def __post_init__(self):
         if not (0 <= self.r <= 255):
@@ -166,7 +169,19 @@ class Color:
             int(self.b + (other.b - self.b) * a),
         )
 
-# ------------------------------------------------------------
+    def shift_hsv(self, h: float, s:float,v:float):
+        sh, ss, sv=self.to_hsv()
+        sh=(sh+h)%1.0
+        ss=min(1.0, max(0.0, ss+s))
+        sv=min(1.0, max(0.0, sv+v))
+        return Color.hsv(sh, ss, sv)
+
+    def shift_rgb(self, r: int, g:int, b:int):
+        return Color(min(255,max(0,self.r+r)),
+                     min(255,max(0,self.g+g)),
+                     min(255,max(0,self.b+b)))
+
+    # ------------------------------------------------------------
     # Stringification
     # ------------------------------------------------------------
 

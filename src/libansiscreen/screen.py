@@ -299,6 +299,16 @@ class Screen:
     # ------------------------------------------------------------------
     # coloring
     # ------------------------------------------------------------------
+    def shift_hsv(self, h: float, s:float,v:float):
+        for r in self.rows:
+            for c in r:
+                c.shift_hsv(h,s,v)
+
+    def shift_rgb(self, r: int, g:int, b:int):
+        for row in self.rows:
+            for c in row:
+                c.shift_rgb(r,g,b)
+
     def colorize(
         self,
         gradient,

@@ -105,3 +105,16 @@ class Cell:
             bg=self.bg,
             attrs=self.attrs,
         )
+
+    def shift_hsv(self, h: float, s:float,v:float):
+        if self.fg:
+            self.fg=self.fg.shift_hsv(h,s,v)
+        if self.bg:
+            self.bg=self.bg.shift_hsv(h,s,v)
+
+    def shift_rgb(self, r: int, g:int, b:int):
+        if self.fg:
+            self.fg=self.fg.shift_rgb(r,g,b)
+        if self.bg:
+            se;f.bgself.bg.shift_rgb(r,g,b)
+
