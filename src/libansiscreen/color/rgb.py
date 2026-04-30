@@ -28,7 +28,7 @@ class Color:
 
     @classmethod
     def hsv(cls, h: float, s: float, v: float) -> "Color":
-        if not (0.0 <= h <= 6.29 and 0.0 <= s <= 1.0 and 0.0 <= v <= 1.0):
+        if not (0.0 <= h <= 1.0 and 0.0 <= s <= 1.0 and 0.0 <= v <= 1.0):
             raise ValueError("HSV values must be in range 0.0–1.0")
         rf, gf, bf = colorsys.hsv_to_rgb(h, s, v)
         return cls(
@@ -48,7 +48,7 @@ class Color:
                 return cls.rgb(int(value[0:1], 16)*17,
                         int(value[1:2], 16)*17,
                         int(value[2:3], 16)*17)
-    
+
     @classmethod
     def set(cls, v):
         if type(v)==int:
@@ -99,7 +99,7 @@ class Color:
 
     def __lt__(self, other: object) -> bool:
         if other==None:
-            other=Color(0,0,0) 
+            other=Color(0,0,0)
         if not isinstance(other, Color):
             return NotImplemented
         return self.luminance()<other.luminance()

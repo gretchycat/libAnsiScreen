@@ -138,31 +138,34 @@ def paste(
 
             src_cell = src.get_cell(sx, sy)
             dst_cell = dst.get_cell(dx, dy)
+            if not dst_cell:
+                dst_cell=Cell()
+                dst.set_cell(dx,dy,dst_cell)
+            if src_cell:
+                # Character
+                if (
+                    src_cell.char is not None
+                    and src_cell.char not in transparent_char
+                ):
+                    dst_cell.char = src_cell.char
 
-            # Character
-            if (
-                src_cell.char is not None
-                and src_cell.char not in transparent_char
-            ):
-                dst_cell.char = src_cell.char
+                # Foreground
+                if (
+                    not transparent_fg
+                    and src_cell.fg is not None
+                ):
+                    dst_cell.fg = src_cell.fg
 
-            # Foreground
-            if (
-                not transparent_fg
-                and src_cell.fg is not None
-            ):
-                dst_cell.fg = src_cell.fg
+                # Background
+                if (
+                    not transparent_bg
+                    and src_cell.bg is not None
+                ):
+                    dst_cell.bg = src_cell.bg
 
-            # Background
-            if (
-                not transparent_bg
-                and src_cell.bg is not None
-            ):
-                dst_cell.bg = src_cell.bg
-
-            # Attributes
-            if (
-                not transparent_attrs
-                and src_cell.attrs is not None
-            ):
-                dst_cell.attrs = src_cell.attrs
+                # Attributes
+                if (
+                    not transparent_attrs
+                    and src_cell.attrs is not None
+                ):
+                    dst_cell.attrs = src_cell.attrs

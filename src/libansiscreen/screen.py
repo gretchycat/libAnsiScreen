@@ -96,7 +96,10 @@ class Screen:
         if x < 0 or x >= self.width:
             return
         self._ensure_row(y)
-        self.rows[y][x] = cell.copy()
+        if cell:
+            self.rows[y][x] = cell.copy()
+        else:
+            self.rows[y][x] = None
 
     def put_cell(self, x: int, y: int, *, char=None, fg=None, bg=None, attrs=0,) -> None:
         self.set_cell(

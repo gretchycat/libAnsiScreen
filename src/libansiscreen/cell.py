@@ -70,7 +70,6 @@ class Cell:
         Bit 3: attributes
         """
         mask = 0
-
         if self.char != other.char:
             mask |= 0b0001
         if self.fg != other.fg:
@@ -79,7 +78,6 @@ class Cell:
             mask |= 0b0100
         if self.attrs != other.attrs:
             mask |= 0b1000
-
         return mask
 
     # --------------------------------------------------------------
@@ -107,14 +105,16 @@ class Cell:
         )
 
     def shift_hsv(self, h: float, s:float,v:float):
-        if self.fg:
+        if self.fg is not None:
             self.fg=self.fg.shift_hsv(h,s,v)
-        if self.bg:
+        if self.bg is not None:
             self.bg=self.bg.shift_hsv(h,s,v)
+        return self
 
     def shift_rgb(self, r: int, g:int, b:int):
-        if self.fg:
+        if self.fg is not None:
             self.fg=self.fg.shift_rgb(r,g,b)
-        if self.bg:
-            se;f.bgself.bg.shift_rgb(r,g,b)
+        if self.bg is not None:
+            self.bg=self.bg.shift_rgb(r,g,b)
+        return self
 
