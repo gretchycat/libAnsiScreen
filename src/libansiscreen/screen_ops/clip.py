@@ -49,7 +49,7 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
                     Cell(
                         char=None,
                         fg=None,
-                        bg=screen.current_bg,
+                        bg=None,
                         attrs=0,
                     )
                 )
