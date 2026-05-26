@@ -23,8 +23,8 @@ ATTR_STRIKE     = 0b10000000
 # ----------------------------------------------------------------------
 
 _ANSI16 = create_ansi_16_palette()
-DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
-DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black
+DEFAULT_FG = None #_ANSI16.index_to_rgb(7)   # light gray
+DEFAULT_BG = None #_ANSI16.index_to_rgb(0)   # black
 
 
 # ----------------------------------------------------------------------
@@ -41,9 +41,9 @@ class Cell:
     """
 
     char: str = None
-    fg: Optional[Color] = None #DEFAULT_FG
+    fg: Optional[Color] = DEFAULT_FG
     bg: Optional[Color] = DEFAULT_BG
-    attrs: int = 0
+    attrs:int = 0
 
     # --------------------------------------------------------------
     # Comparison helpers
