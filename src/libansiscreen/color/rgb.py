@@ -61,8 +61,11 @@ class Color:
             return cls.rgb(v[0], v[1], v[2])
         if type(v)==dict:
             return cls.rgb(v['r'], v['g'], v['b'])
+        if v is None:
+            return cls.rgb(None,None,None)
         if isinstance(v, Color):
             return cls.rgb(v.r, v.g, v.b)
+
     def copy(self):
         return Color(self.r, self.g, self.b)
 
