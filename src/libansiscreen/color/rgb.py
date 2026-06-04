@@ -62,7 +62,7 @@ class Color:
         if type(v)==dict:
             return cls.rgb(v['r'], v['g'], v['b'])
         if v is None:
-            return cls.rgb(None,None,None)
+            return cls.rgb(0,0,0)
         if isinstance(v, Color):
             return cls.rgb(v.r, v.g, v.b)
 
