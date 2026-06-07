@@ -76,9 +76,6 @@ class ANSIEmitter:
     # Public API
     # -------------------------
 
-    def emit_diff(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:
-        return self.emit(screen, box,raw)
-
     def emit(self, screen: Screen, box: Optional[Box] = None, raw=False) -> str:
         out = []
         if box is None:
@@ -95,13 +92,11 @@ class ANSIEmitter:
             bg=AnsiColorState("ansi16", (0,)),
             attrs=0,
         )
-        
         for row in range(start_y, height-1):
-            y = start_y + row
             if raw:
-                out[-1]+=f"\x1b[{y+start_y+1};{1}H"
+                out[-1]+=f"\x1b[{row+1};{1}H"
+            last_x=0
             for col in range(start_x,width):
-                x = start_x + col
                 cell = screen.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
@@ -111,6 +106,57 @@ class ANSIEmitter:
                 if self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
                 out[-1]+=(ch or ' ')
+            out[-1]+=("\x1b[0m")
+            if row<height:
+                out.append('')
+            prev = TerminalState(
+                fg=AnsiColorState("ansi16", (7,0)),
+                bg=AnsiColorState("ansi16", (0,0)),
+                attrs=0,
+            )
+        if raw:
+            return"".join(out)
+        return "\n".join(out)
+
+    def emit_diff_dummy(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:
+        return self.emit(screen, box,raw)
+
+    def emit_diff(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:  #FIXME
+        out = []
+        if box is None:
+            start_x, start_y = 0, 0
+            width, height = screen.width, screen.height
+        else:
+            start_x, start_y = max(0,box.x), max(0,box.y)
+            width, height = min(box.width,screen.width), min(box.height,screen.height)
+        # hard reset + home
+        out.append("\x1b[0m")
+        # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
+        prev = TerminalState(
+            fg=AnsiColorState("ansi16", (7,)),
+            bg=AnsiColorState("ansi16", (0,)),
+            attrs=0,
+        )
+        for row in range(start_y, height):
+            if raw or pscreen is not None:
+                out[-1]+=f"\x1b[{row+1};{1}H"
+            dx=0
+            for col in range(start_x,width):
+                if pscreen==None or screen.get_cell(col,row)!=pscreen.get_cell(col,row):
+                    cell = screen.get_cell(col,row) or Cell()
+                    desired = self._compile_cell(prev, cell)
+                    seq, prev = self._emit_transition(prev, desired)
+                    if dx>1: out[-1]=f'\x1b[{dx}C'
+                    if dx==1: out[-1]=f'\x1b[C'
+                    dx=0
+                    if seq!='':
+                        out[-1]+=seq
+                    ch = cell.char
+                    if self._dos_colors_match(prev.fg, prev.bg):
+                        ch = "█"
+                    out[-1]+=(ch or ' ')
+                else:
+                    dx+=1
             out[-1]+=("\x1b[0m")
             if row<height:
                 out.append('')
