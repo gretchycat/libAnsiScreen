@@ -92,7 +92,7 @@ class ANSIEmitter:
             bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
-        for row in range(start_y, height):
+        for row in range(start_y, height-1):
             if raw:
                 out[-1]+=f"\x1b[{row+1};{1}H"
             for col in range(start_x,width):
@@ -139,7 +139,7 @@ class ANSIEmitter:
             bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
-        for row in range(start_y, height):
+        for row in range(start_y, height-1):
             set_y=None
             if raw or pscreen is not None:
                 set_y=f"\x1b[{row+1};{1}H"
