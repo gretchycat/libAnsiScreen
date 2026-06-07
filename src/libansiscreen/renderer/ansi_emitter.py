@@ -95,7 +95,6 @@ class ANSIEmitter:
         for row in range(start_y, height-1):
             if raw:
                 out[-1]+=f"\x1b[{row+1};{1}H"
-            last_x=0
             for col in range(start_x,width):
                 cell = screen.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
