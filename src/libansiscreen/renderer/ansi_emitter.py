@@ -121,6 +121,9 @@ class ANSIEmitter:
         return self.emit(screen, box,raw)
 
     def emit_diff(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:  #FIXME
+        if pscreen:
+            if pscreen.width!=screen.width or pscreen.height!=screen.height:
+                pscreen=None
         out = []
         if box is None:
             start_x, start_y = 0, 0
