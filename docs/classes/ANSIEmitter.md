@@ -45,7 +45,7 @@ print(emitter.emit(screen))
 ---
 
 ### `emit_diff(screen: Screen, pscreen: Screen, box: Optional[Box] = None, raw: bool = False) -> str`
-Reserved for future use. Currently performs a standard `emit`.
+Renters only the cells that have changed since the previous frame..
 
 ---
 
