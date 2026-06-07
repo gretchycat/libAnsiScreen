@@ -88,8 +88,8 @@ class ANSIEmitter:
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
         prev = TerminalState(
-            fg=AnsiColorState("ansi16", (7,)),
-            bg=AnsiColorState("ansi16", (0,)),
+            fg=AnsiColorState("ansi16", (7,0)),
+            bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
         for row in range(start_y, height-1):
@@ -132,21 +132,27 @@ class ANSIEmitter:
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
         prev = TerminalState(
-            fg=AnsiColorState("ansi16", (7,)),
-            bg=AnsiColorState("ansi16", (0,)),
+            fg=AnsiColorState("ansi16", (7,0)),
+            bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
         for row in range(start_y, height):
+            set_y=None
             if raw or pscreen is not None:
-                out[-1]+=f"\x1b[{row+1};{1}H"
+                set_y=f"\x1b[{row+1};{1}H"
             dx=0
             for col in range(start_x,width):
-                if pscreen==None or screen.get_cell(col,row)!=pscreen.get_cell(col,row):
+                if pscreen==None or \
+                        (screen.get_cell(col, row) != \
+                        pscreen.get_cell(col, row)):
+                    if set_y:
+                        out[-1]+=set_y
+                    set_y=None
                     cell = screen.get_cell(col,row) or Cell()
                     desired = self._compile_cell(prev, cell)
                     seq, prev = self._emit_transition(prev, desired)
-                    if dx>1: out[-1]=f'\x1b[{dx}C'
-                    if dx==1: out[-1]=f'\x1b[C'
+                    if dx==1: out[-1]+=f'\x1b[C'
+                    if dx>1: out[-1]+=f'\x1b[{dx}C'
                     dx=0
                     if seq!='':
                         out[-1]+=seq
