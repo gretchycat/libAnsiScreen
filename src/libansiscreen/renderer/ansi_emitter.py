@@ -92,7 +92,7 @@ class ANSIEmitter:
             bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
-        for row in range(start_y, height-1):
+        for row in range(start_y, height):
             if raw:
                 out[-1]+=f"\x1b[{row+1};{1}H"
             for col in range(start_x,width):
