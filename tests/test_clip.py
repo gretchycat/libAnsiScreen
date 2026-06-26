@@ -65,7 +65,6 @@ def test_clip_pipeline():
     )
     emit(screen, Path("test_clip_pasted.ans"))
 
-
 if __name__ == "__main__":
     test_clip_pipeline()
     print("test_clip_pipeline completed")
