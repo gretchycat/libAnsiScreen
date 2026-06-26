@@ -209,6 +209,8 @@ class ANSIEmitter:
     # -------------------------
 
     def _encode_color(self, color: Color, *, fg: bool) -> AnsiColorState:
+        if type(color)!=Color:
+            color= Color.set(0)
         if self.dos_mode:
             # DOS: map to ANSI16 via HSV; represent as base(0-7) + bright flag
             idx = quantize_nearest_rgb(color, ANSI16)
