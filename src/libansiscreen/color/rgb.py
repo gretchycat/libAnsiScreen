@@ -81,7 +81,7 @@ class Color:
         if other==None:
             other=Color(0,0,0)
         if not isinstance(other, Color):
-            return NotImplemented
+            other=Color.set(other)
         return (self.r == other.r
             and self.g == other.g
             and self.b == other.b)
@@ -97,14 +97,14 @@ class Color:
         if other==None:
             other=Color(0,0,0)
         if not isinstance(other, Color):
-            return NotImplemented
+            other=Color.set(other)
         return self.luminance()>other.luminance()
 
     def __lt__(self, other: object) -> bool:
         if other==None:
             other=Color(0,0,0)
         if not isinstance(other, Color):
-            return NotImplemented
+            other=Color.set(other)
         return self.luminance()<other.luminance()
 
     # ------------------------------------------------------------
