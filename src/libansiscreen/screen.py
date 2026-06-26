@@ -166,10 +166,10 @@ class Screen:
     # Graphics state (SGR-like)
     # ------------------------------------------------------------------
     def set_foreground(self, color: Color) -> None:
-        self.current_fg = color
+        self.current_fg = Color.set(color)
 
     def set_background(self, color: Color) -> None:
-        self.current_bg = color
+        self.current_bg = Color.set(color)
 
     def set_attrs(self, attrs: int) -> None:
         self.current_attrs = attrs
