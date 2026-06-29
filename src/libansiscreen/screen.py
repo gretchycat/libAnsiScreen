@@ -231,7 +231,10 @@ class Screen:
         emitter=ANSIEmitter()
         return emitter.emit(self, box=box, raw=raw )
 
-    def __str__(self, box=None, raw=False):
+    def __repr__(self):
+        return f'Screen ({self.width}, {self.height})'
+
+    def __strx__(self, box=None, raw=False):
         from libansiscreen.renderer.ansi_emitter import ANSIEmitter
         emitter=ANSIEmitter()
         return emitter.emit(self, box=box, raw=raw )
@@ -248,7 +251,7 @@ class Screen:
         """
         Clear screen, reset cursor and graphics state.
         """
-        y=len(self.rows)
+        y=len(self.rows)-1
         self.rows.clear()
         self.cursor.reset()
         self._ensure_row(y)
