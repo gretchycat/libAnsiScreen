@@ -40,7 +40,7 @@ class Cell:
     Use fg=None or bg=None explicitly to indicate inheritance.
     """
 
-    char: str = None
+    char: str|None = None
     fg: Optional[Color] = DEFAULT_FG
     bg: Optional[Color] = DEFAULT_BG
     attrs:int = 0

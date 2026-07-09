@@ -17,7 +17,7 @@ class Color:
     r: int
     g: int
     b: int
-    a: int =255
+    a: int = 255
 
     # ------------------------------------------------------------
     # Validation

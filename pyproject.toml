@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "libAnsiScreen"
-version = "0.1.0"
+version = "0.1.1"
 description = "Character-cell rendering engine with ANSI import/export"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 
 authors = [
-  { name = "Your Name", email = "you@example.com" }
+  { name = "Gretchen Maculo", email = "gretchynm@gmail.com" }
 ]
 
 keywords = [
