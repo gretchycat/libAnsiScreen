@@ -17,7 +17,7 @@ from ..cell import (
 from ..color.rgb import Color
 from ..color.palette import create_ansi_16_palette, create_ansi_256_palette
 from ..color.quantize import quantize_exact, quantize_nearest_rgb
-from ..screen import Screen
+from ..framebuffer import frameBuffer
 
 ANSI16 = create_ansi_16_palette()
 ANSI256 = create_ansi_256_palette()
@@ -53,7 +53,7 @@ class TerminalState:
     attrs: int  # ANSI attrs bitmask as *intended* (after DOS/ICE normalization)
 
 
-class ANSIEmitter:
+class ANSIEmitter(frameBuffer):
     """
     Emitter that diffs terminal *intent* in ANSI space.
     - Compile each cell into desired ANSI encoding (attrs + fg + bg)
@@ -76,14 +76,14 @@ class ANSIEmitter:
     # Public API
     # -------------------------
 
-    def emit(self, screen: Screen, box: Optional[Box] = None, raw=False) -> str:
+    def emit(self, fb: frameBuffer, box: Optional[Box] = None, raw=False) -> str:
         out = []
         if box is None:
             start_x, start_y = 0, 0
-            width, height = screen.width, screen.height
+            width, height = fb.width, fb.height
         else:
             start_x, start_y = max(0,box.x), max(0,box.y)
-            width, height = min(box.width,screen.width), miin(box.height,screen.height)
+            width, height = min(box.width,fb.width), miin(box.height,fb.height)
         # hard reset + home
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
@@ -96,7 +96,7 @@ class ANSIEmitter:
             if raw:
                 out[-1]+=f"\x1b[{row+1};{1}H"
             for col in range(start_x,width):
-                cell = screen.get_cell(col, row) or Cell()
+                cell = fb.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
                 if seq:
@@ -117,20 +117,17 @@ class ANSIEmitter:
             return"".join(out)
         return "\n".join(out)
 
-    def emit_diff_dummy(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:
-        return self.emit(screen, box,raw)
-
-    def emit_diff(self, screen: Screen, pscreen:Screen, box: Optional[Box] = None, raw=False) -> str:  #FIXME
-        if pscreen:
-            if pscreen.width!=screen.width or pscreen.height!=screen.height:
-                pscreen=None
+    def emit_diff(self, fb: frameBuffer, pfb:frameBuffer, box: Optional[Box] = None, raw=False) -> str:  #FIXME
+        if pfb:
+            if pfb.width!=fb.width or pfb.height!=fb.height:
+                pfb=None
         out = []
         if box is None:
             start_x, start_y = 0, 0
-            width, height = screen.width, screen.height
+            width, height = fb.width, fb.height
         else:
             start_x, start_y = max(0,box.x), max(0,box.y)
-            width, height = min(box.width,screen.width), min(box.height,screen.height)
+            width, height = min(box.width,fb.width), min(box.height,fb.height)
         # hard reset + home
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
@@ -141,17 +138,17 @@ class ANSIEmitter:
         )
         for row in range(start_y, height-1):
             set_y=None
-            if raw or pscreen is not None:
+            if raw or pfb is not None:
                 set_y=f"\x1b[{row+1};{1}H"
             dx=0
             for col in range(start_x,width):
-                if pscreen==None or \
-                        (screen.get_cell(col, row) != \
-                        pscreen.get_cell(col, row)):
+                if pfb==None or \
+                        (fb.get_cell(col, row) != \
+                        pfb.get_cell(col, row)):
                     if set_y:
                         out[-1]+=set_y
                     set_y=None
-                    cell = screen.get_cell(col,row) or Cell()
+                    cell = fb.get_cell(col,row) or Cell()
                     desired = self._compile_cell(prev, cell)
                     seq, prev = self._emit_transition(prev, desired)
                     if dx==1: out[-1]+=f'\x1b[C'
