@@ -1,14 +1,14 @@
 from typing import Iterable, Optional
 
-from libansiscreen.screen import Screen
-from libansiscreen.color.rgb import Color
+from ..framebuffer import frameBuffer
+from ..color.rgb import Color
 
 # ------------------------------------------------------------
 # Horizontal gradient (left → right)
 # ------------------------------------------------------------
 
 def apply_hgrad(
-    screen: Screen,
+    fb: frameBuffer,
     gradient: list[Color],
     *,
     foreground: bool = True,
@@ -16,14 +16,14 @@ def apply_hgrad(
     only_if_set: bool = True,
     tint: Optional[float] = None,
 ) -> None:
-    width = screen.width
-    height = screen.height
+    width = fb.width
+    height = fb.height
     if width <= 1 or not gradient:
         return
     n = len(gradient)
     for y in range(height):
         for x in range(width):
-            cell = screen.get_cell(x, y)
+            cell = fb.get_cell(x, y)
             if cell is None:
                 continue
             if only_if_set and cell.char is None:
@@ -40,7 +40,7 @@ def apply_hgrad(
 # ------------------------------------------------------------
 
 def apply_vgrad(
-    screen: Screen,
+    fb: frameBuffer,
     gradient: list[Color],
     *,
     foreground: bool = True,
@@ -48,8 +48,8 @@ def apply_vgrad(
     only_if_set: bool = True,
     tint: Optional[float] = None,
 ) -> None:
-    width = screen.width
-    height = screen.height
+    width = fb.width
+    height = fb.height
     if height <= 1 or not gradient:
         return
     n = len(gradient)
@@ -57,7 +57,7 @@ def apply_vgrad(
         idx = int(y * (n - 1) / (height - 1))
         color = gradient[idx]
         for x in range(width):
-            cell = screen.get_cell(x, y)
+            cell = fb.get_cell(x, y)
             if cell is None:
                 continue
             if only_if_set and cell.char is None:
@@ -72,7 +72,7 @@ def apply_vgrad(
 # ------------------------------------------------------------
 
 def apply_dgrad(
-    screen: Screen,
+    fb: frameBuffer,
     gradient: list[Color],
     *,
     foreground: bool = True,
@@ -81,8 +81,8 @@ def apply_dgrad(
     tint: Optional[float] = None,
     direction: str = "tlbr",
 ) -> None:
-    width = screen.width
-    height = screen.height
+    width = fb.width
+    height = fb.height
     if width <= 1 or height <= 1 or not gradient:
         return
     n = len(gradient)
@@ -91,7 +91,7 @@ def apply_dgrad(
         return
     for y in range(height):
         for x in range(width):
-            cell = screen.get_cell(x, y)
+            cell = fb.get_cell(x, y)
             if cell is None:
                 continue
             if only_if_set and cell.char is None:
@@ -113,7 +113,7 @@ def apply_dgrad(
 # ------------------------------------------------------------
 
 def apply_words(
-    screen: Screen,
+    fb: frameBuffer,
     gradient: list[Color],
     *,
     foreground: bool = True,
@@ -124,9 +124,9 @@ def apply_words(
         return
     n = len(gradient)
     idx = 0
-    for y in range(screen.height):
-        for x in range(screen.width):
-            cell = screen.get_cell(x, y)
+    for y in range(fb.height):
+        for x in range(fb.width):
+            cell = fb.get_cell(x, y)
             if cell is None or cell.char is None:
                 continue
             if cell.char==' ':
@@ -144,7 +144,7 @@ def apply_words(
 # ------------------------------------------------------------
 
 def colorize(
-    screen: Screen,
+    fb: frameBuffer,
     gradient: Iterable[Color],
     *,
     mode: str = "hgrad",
@@ -155,7 +155,7 @@ def colorize(
     direction: str = "tlbr",
 ) -> None:
     """
-    Apply a color gradient to the screen.
+    Apply a color gradient to the fb.
     """
 
     gradient = list(gradient)
@@ -163,7 +163,7 @@ def colorize(
 
     if mode in ("hgrad", "horizontal"):
         apply_hgrad(
-            screen,
+            fb,
             gradient,
             foreground=foreground,
             background=background,
@@ -173,7 +173,7 @@ def colorize(
 
     elif mode in ("vgrad", "vertical"):
         apply_vgrad(
-            screen,
+            fb,
             gradient,
             foreground=foreground,
             background=background,
@@ -183,7 +183,7 @@ def colorize(
 
     elif mode in ("dgrad", "diag", "diagonal"):
         apply_dgrad(
-            screen,
+            fb,
             gradient,
             foreground=foreground,
             background=background,
@@ -194,7 +194,7 @@ def colorize(
 
     elif mode in ("words",):
         apply_words(
-            screen,
+            fb,
             gradient,
             foreground=foreground,
             background=background,

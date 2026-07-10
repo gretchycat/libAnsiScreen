@@ -1,9 +1,8 @@
 from __future__ import annotations
 from typing import Optional, Iterable, Union, Tuple, Set
-from libansiscreen.screen import Screen
-from libansiscreen.cell import Cell
-from libansiscreen.color.rgb import Color
-from typing import Optional, Tuple
+from ..cell import Cell
+from ..color.rgb import Color
+from ..framebuffer import frameBuffer
 # Box is (x, y, width, height)
 Box = Tuple[int, int, int, int]
 
@@ -19,9 +18,9 @@ def _coerce_box(box: Optional[Union[Box, Iterable[int]]]) -> Optional[Box]:
         return Box(*box)
     raise TypeError(f"Invalid box type: {type(box)}")
 
-def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
+def clear(fb: frameBuffer, box: Optional[Union[Box, tuple]] = None) -> None:
     """
-    Clear cells in `screen` inside `box`.
+    Clear cells in `fb` inside `box`.
 
     Clearing means:
       - char = None
@@ -29,12 +28,12 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
       - bg   = color 0,0,0
       - attrs = 0
 
-    If box is None, clears the entire screen.
+    If box is None, clears the entire fb.
     """
 
     if box is None:
         x0, y0 = 0, 0
-        w, h = screen.width, screen.height
+        w, h = fb.width, fb.height
     else:
         if type(box)==tuple:
             x0, y0, w, h = box #box.x, box.y, box.width, box.height
@@ -43,8 +42,8 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
 
     for y in range(y0, y0 + h):
         for x in range(x0, x0 + w):
-            if screen.get_cell(x, y) is not None:
-                screen.set_cell(
+            if fb.get_cell(x, y) is not None:
+                fb.set_cell(
                     x, y,
                     Cell(
                         char=None,
@@ -54,45 +53,45 @@ def clear(screen: Screen, box: Optional[Union[Box, tuple]] = None) -> None:
                     )
                 )
 
-def copy(screen, box: Optional[Box] = None) -> Screen:
+def copy(fb, box: Optional[Box] = None) -> frameBuffer:
     """
-    Copy a region of a screen into a new screen.
-    If box is None, returns a full deep copy of the screen.
+    Copy a region of a fb into a new fb.
+    If box is None, returns a full deep copy of the fb.
     Box is defined as (x, y, width, height).
     """
     if box is None:
-        box=(0,0,screen.width,screen.height)
+        box=(0,0,fb.width,fb.height)
     x0, y0, w, h = box
     if w <= 0 and h <= 0:
         raise ValueError("Box width and height must be positive")
     if w <= 0:
         raise ValueError("Box width must be positive")
-    new_screen = Screen(w)
+    new_fb = frameBuffer(w)
     for dy in range(h):
         sy = y0 + dy
-        if sy < 0 or sy >= screen.height:
+        if sy < 0 or sy >= fb.height:
             continue
         for dx in range(w):
             sx = x0 + dx
-            if sx < 0 or sx >= screen.width:
+            if sx < 0 or sx >= fb.width:
                 continue
-            cell = screen.get_cell(sx, sy)
-            new_screen.set_cell(dx, dy, cell.copy())
-    return new_screen
+            cell = fb.get_cell(sx, sy)
+            new_fb.set_cell(dx, dy, cell.copy())
+    return new_fb
 
-def cut(screen: Screen, box: Optional[Box] = None) -> Screen:
+def cut(fb: frameBuffer, box: Optional[Box] = None) -> frameBuffer:
     """
-    Cut a region from a screen: copy it, then clear the original region.
+    Cut a region from a fb: copy it, then clear the original region.
 
-    If box is None, cuts the entire screen.
+    If box is None, cuts the entire fb.
     """
-    buf = copy(screen, box)
-    clear(screen, box)
+    buf = copy(fb, box)
+    clear(fb, box)
     return buf
 
 def paste(
-    dst: Screen,
-    src: Screen,
+    dst: frameBuffer,
+    src: frameBuffer,
     *,
     box: Optional[Box] = None,
     transparent_char: Optional[Set[str]] = None,
@@ -101,7 +100,7 @@ def paste(
     transparent_attrs: bool = False,
 ) -> None:
     """
-    Paste src screen into dst screen with transparency rules.
+    Paste src fb into dst fb with transparency rules.
     """
 
     if transparent_char is None:

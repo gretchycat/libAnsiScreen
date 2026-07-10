@@ -1,8 +1,7 @@
-# libansiscreen/ansi/parser.py
+# libansifb/ansi/parser.py
 
 from typing import List
 
-from ..screen import Screen
 from ..cell import (
     ATTR_BOLD,
     ATTR_FAINT,
@@ -18,6 +17,7 @@ from ..color.palette import (
     create_ansi_16_palette,
     create_ansi_256_palette,
 )
+from ..framebuffer import frameBuffer
 
 # ----------------------------------------------------------------------
 # Palettes (facts, not policy)
@@ -60,9 +60,9 @@ dec_special_graphics = {
     '~': '\u00B7',  # ·
 }
 
-class ANSIParser:
+class ANSIParser(frameBuffer):
     """
-    Streaming ANSI parser that mutates a Screen.
+    Streaming ANSI parser that mutates a frameBuffer.
 
     This is a document parser, not a terminal emulator.
     """
@@ -76,8 +76,8 @@ class ANSIParser:
     CHARSET_G3 = 6
     SZ = 7
 
-    def __init__(self, screen: Screen):
-        self.screen = screen
+    def __init__(self, fb: frameBuffer):
+        self.fb = fb
         self.state = self.TEXT
         self.params: List[int] = []
         self.param_buf: str = ""
@@ -113,11 +113,11 @@ class ANSIParser:
         if ch == "\x1b":
             self.state = self.ESC
         elif ch == "\n":
-            self.screen.newline()
+            self.fb.newline()
         elif ch == "\r":
-            self.screen.carriage_return()
+            self.fb.carriage_return()
         else:
-            self.screen.put_char(ch)
+            self.fb.put_char(ch)
 
     # ------------------------------------------------------------------
     # ESC
@@ -129,10 +129,10 @@ class ANSIParser:
             self.params.clear()
             self.param_buf = ""
         elif ch == "7":  # DECSC
-            self.screen.cursor_save()
+            self.fb.cursor_save()
             self.state = self.TEXT
         elif ch == "8":  # DECRC
-            self.screen.cursor_restore()
+            self.fb.cursor_restore()
             self.state = self.TEXT
         #elif ch =='(':
         #elif ch ==')':
@@ -172,30 +172,30 @@ class ANSIParser:
         p = self.params or [0]
 
         if final == "A":  # CUU
-            self.screen.cursor_up(p[0] or 1)
+            self.fb.cursor_up(p[0] or 1)
 
         elif final == "B":  # CUD
-            self.screen.cursor_down(p[0] or 1)
+            self.fb.cursor_down(p[0] or 1)
 
         elif final == "C":  # CUF
-            self.screen.cursor_forward(p[0] or 1)
+            self.fb.cursor_forward(p[0] or 1)
 
         elif final == "D":  # CUB
-            self.screen.cursor_back(p[0] or 1)
+            self.fb.cursor_back(p[0] or 1)
 
         elif final in ("H", "f"):  # CUP / HVP
             y = (p[0] - 1) if len(p) > 0 else 0
             x = (p[1] - 1) if len(p) > 1 else 0
-            self.screen.cursor_goto(x, y)
+            self.fb.cursor_goto(x, y)
 
         elif final == "J":  # ED
             if p[0] == 0:
-                self.screen.clear_to_end_of_screen()
+                self.fb.clear_to_end_of_fb()
             elif p[0] == 2:
-                self.screen.cls()
+                self.fb.cls()
 
         elif final == "K":  # EL
-            self.screen.clear_to_end_of_line()
+            self.fb.clear_to_end_of_line()
 
         elif final == "m":  # SGR
             self._handle_sgr(p)
@@ -217,82 +217,82 @@ class ANSIParser:
             # ----------------------------
 
             if code == 0:
-                self.screen.reset_graphics()
+                self.fb.reset_graphics()
 
             # ----------------------------
             # Attributes
             # ----------------------------
 
             elif code == 1:
-                self.screen.add_attrs(ATTR_BOLD)
+                self.fb.add_attrs(ATTR_BOLD)
 
             elif code == 2:
-                self.screen.add_attrs(ATTR_FAINT)
+                self.fb.add_attrs(ATTR_FAINT)
 
             elif code == 3:
-                self.screen.add_attrs(ATTR_ITALIC)
+                self.fb.add_attrs(ATTR_ITALIC)
 
             elif code == 4:
-                self.screen.add_attrs(ATTR_UNDERLINE)
+                self.fb.add_attrs(ATTR_UNDERLINE)
 
             elif code == 5:
-                self.screen.add_attrs(ATTR_BLINK)
+                self.fb.add_attrs(ATTR_BLINK)
 
             elif code == 7:
-                self.screen.add_attrs(ATTR_INVERSE)
+                self.fb.add_attrs(ATTR_INVERSE)
 
             elif code == 8:
-                self.screen.add_attrs(ATTR_CONCEAL)
+                self.fb.add_attrs(ATTR_CONCEAL)
 
             elif code == 9:
-                self.screen.add_attrs(ATTR_STRIKE)
+                self.fb.add_attrs(ATTR_STRIKE)
 
             elif code == 22:
-                self.screen.clear_attrs(ATTR_BOLD | ATTR_FAINT)
+                self.fb.clear_attrs(ATTR_BOLD | ATTR_FAINT)
 
             elif code == 23:
-                self.screen.clear_attrs(ATTR_ITALIC)
+                self.fb.clear_attrs(ATTR_ITALIC)
 
             elif code == 24:
-                self.screen.clear_attrs(ATTR_UNDERLINE)
+                self.fb.clear_attrs(ATTR_UNDERLINE)
 
             elif code == 25:
-                self.screen.clear_attrs(ATTR_BLINK)
+                self.fb.clear_attrs(ATTR_BLINK)
 
             elif code == 27:
-                self.screen.clear_attrs(ATTR_INVERSE)
+                self.fb.clear_attrs(ATTR_INVERSE)
 
             elif code == 28:
-                self.screen.clear_attrs(ATTR_CONCEAL)
+                self.fb.clear_attrs(ATTR_CONCEAL)
 
             elif code == 29:
-                self.screen.clear_attrs(ATTR_STRIKE)
+                self.fb.clear_attrs(ATTR_STRIKE)
 
             # ----------------------------
             # ANSI16 colors
             # ----------------------------
 
             elif 30 <= code <= 37:
-                self.screen.set_foreground(ANSI16.index_to_rgb(code - 30))
+                self.fb.set_foreground(ANSI16.index_to_rgb(code - 30))
 
             elif 40 <= code <= 47:
-                self.screen.set_background(ANSI16.index_to_rgb(code - 40))
+                self.fb.set_background(ANSI16.index_to_rgb(code - 40))
 
             elif 90 <= code <= 97:
-                self.screen.set_foreground(
+                self.fb.set_foreground(
                     ANSI16.index_to_rgb(code - 90 + 8)
                 )
 
             elif 100 <= code <= 107:
-                self.screen.set_background(
+                self.fb.set_background(
                     ANSI16.index_to_rgb(code - 100 + 8)
                 )
 
             elif code == 39:
-                self.screen.set_foreground(ANSI16.index_to_rgb(7))
+                self.fb.set_foreground(ANSI16.index_to_rgb(7))
 
             elif code == 49:
-                self.screen.set_background(ANSI16.index_to_rgb(0))
+                self.fb.set_background(ANSI16.index_to_rgb(0))
 
             # ----------------------------
             # ANSI256 colors
@@ -300,12 +300,12 @@ class ANSIParser:
 
             elif code == 38 and i + 2 < len(params) and params[i + 1] == 5:
                 idx = params[i + 2]
-                self.screen.set_foreground(ANSI256.index_to_rgb(idx))
+                self.fb.set_foreground(ANSI256.index_to_rgb(idx))
                 i += 2
 
             elif code == 48 and i + 2 < len(params) and params[i + 1] == 5:
                 idx = params[i + 2]
-                self.screen.set_background(ANSI256.index_to_rgb(idx))
+                self.fb.set_background(ANSI256.index_to_rgb(idx))
                 i += 2
 
             # ----------------------------
@@ -314,12 +314,12 @@ class ANSIParser:
 
             elif code == 38 and i + 4 < len(params) and params[i + 1] == 2:
                 r, g, b = params[i + 2:i + 5]
-                self.screen.set_foreground(Color(r, g, b))
+                self.fb.set_foreground(Color(r, g, b))
                 i += 4
 
             elif code == 48 and i + 4 < len(params) and params[i + 1] == 2:
                 r, g, b = params[i + 2:i + 5]
-                self.screen.set_background(Color(r, g, b))
+                self.fb.set_background(Color(r, g, b))
                 i += 4
 
             # ----------------------------

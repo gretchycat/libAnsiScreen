@@ -50,14 +50,14 @@ def build_primitives_basic_composition() -> Screen:
     box(
         8, 4,
         glyphs=BOX_SINGLE,
-        screen=screen,
+        fb=screen,
     )
 
     hline(
         1, 6,
         y=2,
         glyphs=LINE_SINGLE_HORIZONTAL,
-        screen=screen,
+        fb=screen,
         merge=True,
     )
 
@@ -65,7 +65,7 @@ def build_primitives_basic_composition() -> Screen:
         1, 3,
         x=4,
         glyphs=LINE_SINGLE_VERTICAL,
-        screen=screen,
+        fb=screen,
         merge=True,
     )
 

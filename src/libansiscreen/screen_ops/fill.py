@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Tuple
-from libansiscreen.screen import Screen
+from ..framebuffer import frameBuffer
 from libansiscreen.cell import Cell
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops import glyph_defs as G
@@ -18,11 +18,11 @@ def fill(filldata) -> Cell:
     elif isinstance(filldata, int):
         return Cell(G.BLOCK_FULL, c256[abs(filldata)%256],None,0)
     elif isinstance(filldata, dict):
-        if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
-            s=filldata['screen']
+        if all(k in filldata for k in [ 'fb', 'x', 'y' ]):
+            s=filldata['fb']
             x=int(filldata['x'])
             y=int(filldata['y'])
-            if isinstance(s, Screen):
+            if isinstance(s, frameBuffer):
                 w=s.width
                 h.s.height()
                 return s.get_cell(x%w,y%h)
@@ -46,11 +46,11 @@ def block_fill(filldata) -> Color:
     elif isinstance(filldata, int):
         return c256[abs(filldata)%256]
     elif isinstance(filldata, dict):
-        if all(k in filldata for k in [ 'screen', 'x', 'y' ]):
-            s=filldata['screen']
+        if all(k in filldata for k in [ 'fb', 'x', 'y' ]):
+            s=filldata['fb']
             x=int(filldata['x'])
             y=int(filldata['y'])
-            if isinstance(s, Screen):
+            if isinstance(s, frameBuffer):
                 w=s.width
                 h.s.height()*2
                 return s.pixelget(x%w, y%h)

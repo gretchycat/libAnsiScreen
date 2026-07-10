@@ -1,12 +1,12 @@
 from __future__ import annotations
 from typing import Optional, Tuple
-from libansiscreen.screen import Screen
-from libansiscreen.cell import Cell
+from ..framebuffer import frameBuffer
+from ..cell import Cell
 from libansiscreen import cell as C
-from libansiscreen.color.rgb import Color
-from libansiscreen.screen_ops import glyph_defs as G
-from libansiscreen.screen_ops.fill import block_fill
-from libansiscreen.color.palette import create_ansi_16_palette
+from ..color.rgb import Color
+from ..screen_ops import glyph_defs as G
+from ..screen_ops.fill import block_fill
+from ..color.palette import create_ansi_16_palette
 import math
 
 _ANSI16 = create_ansi_16_palette()
@@ -32,8 +32,8 @@ def make_cell(c1, c2):
         return Cell(G.BLOCK_TOP, c1, c2)
     return Cell(G.BLOCK_BOTTOM, c2, c1)
 
-def pixelplot(screen, x, y, color):
-    c=screen.get_cell(x, y//2)
+def pixelplot(fb, x, y, color):
+    c=fb.get_cell(x, y//2)
     if c:
         if y%2==0: #top block
             if c.char==G.BLOCK_BOTTOM:
@@ -53,13 +53,13 @@ def pixelplot(screen, x, y, color):
                 c=make_cell(c.bg, color)
             else:
                 c=make_cell(c.bg, color)
-        screen.set_cell(x,y//2, c)
+        fb.set_cell(x,y//2, c)
 
 pixel=pixelplot
 plot=pixel
 
-def pixelget(screen, x, y):
-    c=screen.get_cell(x, y//2)
+def pixelget(fb, x, y):
+    c=fb.get_cell(x, y//2)
     color=DEFAULT_BG
     if c:
         if y%2==0: #top block
@@ -82,7 +82,7 @@ def pixelget(screen, x, y):
                 color=c.bg or DEFAULT_BG
     return color
 
-def draw_line(screen, x0, y0, x1, y1, color):
+def draw_line(fb, x0, y0, x1, y1, color):
     """
     Draw a line from (x0, y0) to (x1, y1) using pixelplot.
     Works for all slopes, arbitrary start/end.
@@ -97,7 +97,7 @@ def draw_line(screen, x0, y0, x1, y1, color):
     if dx > dy:
         err = dx // 2
         while x != x1:
-            pixelplot(screen, x, y, color)
+            pixelplot(fb, x, y, color)
             err -= dy
             if err < 0:
                 y += sy
@@ -106,16 +106,16 @@ def draw_line(screen, x0, y0, x1, y1, color):
     else:
         err = dy // 2
         while y != y1:
-            pixelplot(screen, x, y, color)
+            pixelplot(fb, x, y, color)
             err -= dx
             if err < 0:
                 x += sx
                 err += dy
             y += sy
     # plot last point
-    pixelplot(screen, x1, y1, color)
+    pixelplot(fb, x1, y1, color)
 
-def draw_polyline(screen, points, color):
+def draw_polyline(fb, points, color):
     """
     Draw multiple connected lines.
     points: list of (x, y) tuples
@@ -127,7 +127,7 @@ def draw_polyline(screen, points, color):
     for i in range(len(points) - 1):
         x0, y0 = points[i]
         x1, y1 = points[i + 1]
-        draw_line(screen, x0, y0, x1, y1, color)
+        draw_line(fb, x0, y0, x1, y1, color)
 
 def regular_polygon(cx, cy, radius, sides, rotation=0.0):
     points = []
@@ -142,12 +142,12 @@ def regular_polygon(cx, cy, radius, sides, rotation=0.0):
     points.append(points[0])  # close the shape
     return points
 
-def draw_regular_polygon(screen, cx, cy, radius, sides, color, rotation=0.0):
+def draw_regular_polygon(fb, cx, cy, radius, sides, color, rotation=0.0):
     """
     Draw a regular convex polygon by generating vertices and drawing a polyline.
     """
     points = regular_polygon(cx, cy, radius, sides, rotation)
-    draw_polyline(screen, points, color)
+    draw_polyline(fb, points, color)
 
 def regular_star(cx, cy, radius, n, k, rotation=0.0):
     import math
@@ -178,26 +178,26 @@ def regular_star(cx, cy, radius, n, k, rotation=0.0):
     points.append(points[0])  # close
     return points
 
-def draw_regular_star(screen, cx, cy, radius, n, k, color, rotation=0.0):
+def draw_regular_star(fb, cx, cy, radius, n, k, color, rotation=0.0):
     """
     Draw a regular star polygon {n/k}.
     """
     points = regular_star(cx, cy, radius, n, k, rotation)
-    draw_polyline(screen, points, color)
+    draw_polyline(fb, points, color)
 
-def flood_fill(screen, x_seed, y_seed,fill=None):
+def flood_fill(fb, x_seed, y_seed,fill=None):
     """
     Generate a mask from seed point that is complement of seed,
     respecting block types and optionally color/char matches.
     """
-    width, height = screen.width, screen.height*2
-    mask=Screen(width=width)
+    width, height = fb.width, fb.height*2
+    mask=frameBuffer(width=width)
     stack = [(x_seed, y_seed)]
-    seed_color = screen.pixelget(x_seed,y_seed)
+    seed_color = pixelget(fb, x_seed,y_seed)
     while stack:
         x, y = stack.pop()
         mcell=mask.get_cell(x, y//2)
-        if mask.pixelget(x, y) == DEFAULT_FG:
+        if pixelget(mask, x, y) == DEFAULT_FG:
             continue    # already visited
         mcell=mask.get_cell(x, y//2)
         if y%2==1:
@@ -206,12 +206,12 @@ def flood_fill(screen, x_seed, y_seed,fill=None):
         else:
             if mcell.attrs & C.ATTR_STRIKE:
                 continue  # already visited
-        colorx = screen.pixelget(x, y)
+        colorx = pixelget(fb, x, y)
         # Decide if this pixel is part of fill region
         if colorx==seed_color:
-            mask.pixelplot(x,y,DEFAULT_FG)
+            pixelplot(mask, x,y,DEFAULT_FG)
             if fill:
-                screen.pixelplot(x,y,block_fill(fill))
+                pixelplot(fb,x,y,block_fill(fill))
         else:
             mcell=mask.get_cell(x, y//2)
             a=mcell.attrs or 0
@@ -226,24 +226,24 @@ def flood_fill(screen, x_seed, y_seed,fill=None):
                 stack.append((nx, ny))
     return mask
 
-def draw_rectangle(screen,x1, y1, x2, y2,fill=None):
-    mask=Screen(width=max(x1, x2)+1)
+def draw_rectangle(fb,x1, y1, x2, y2,fill=None):
+    mask=frameBuffer(width=max(x1, x2)+1)
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
-            mask.pixelplot(x,y,DEFAULT_FG)
-            if screen and fill:
-                screen.pixelplot(x,y,block_fill(fill))
+            pixelplot(mask, x,y,DEFAULT_FG)
+            if fb and fill:
+                pixelplot(fb, x,y,block_fill(fill))
     return mask
 
-def draw_ellipse(screen, cx, cy, rx, ry, fill=None):
-    # Use screen dimensions for safe clamping
-    screen_w = cx+rx+1
-    screen_h = cy+ry+1
-    mask = Screen(width=screen_w)
+def draw_ellipse(fb, cx, cy, rx, ry, fill=None):
+    # Use fb dimensions for safe clamping
+    fb_w = cx+rx+1
+    fb_h = cy+ry+1
+    mask = frameBuffer(width=fb_w)
     # Iterate from the top of the ellipse to the bottom
     for y in range(cy - ry, cy + ry + 1):
-        # Skip rows outside the screen vertical bounds
-        if y < 0 or y >= screen_h:
+        # Skip rows outside the fb vertical bounds
+        if y < 0 or y >= fb_h:
             continue
         # Standardize y relative to center
         dy = y - cy
@@ -252,11 +252,11 @@ def draw_ellipse(screen, cx, cy, rx, ry, fill=None):
         h_ratio = 1 - (dy**2 / ry**2)
         if h_ratio >= 0:
             dx = int(rx * math.sqrt(h_ratio))
-            # Clamp to screen boundaries
+            # Clamp to fb boundaries
             x_left = max(0, cx - dx)
-            x_right = min(screen_w - 1, cx + dx)
-            mask.line(x_left, y, x_right, y, DEFAULT_FG)
-            if screen and fill:
-                screen.line(x_left,y,x_right, y, block_fill(fill))
+            x_right = min(fb_w - 1, cx + dx)
+            draw_line(mask, x_left, y, x_right, y, DEFAULT_FG)
+            if fb and fill:
+                draw_line(fb, x_left,y,x_right, y, block_fill(fill))
     return mask
 

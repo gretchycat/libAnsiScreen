@@ -22,15 +22,15 @@ class Screen(frameBuffer):
         parser=ANSIParser(self)
         parser.feed(s)
 
-    def emit(self, box=None, raw=False):
-        from libansiscreen.renderer.ansi_emitter import ANSIEmitter
-        emitter=ANSIEmitter()
-        return emitter.emit(self, box=box, raw=raw )
-
     def __repr__(self):
         return f'Screen ({self.width}, {self.height})'
 
     def __strx__(self, box=None, raw=False):
+        from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+        emitter=ANSIEmitter()
+        return emitter.emit(self, box=box, raw=raw )
+    
+    def emit(self, box=None, raw=False):
         from libansiscreen.renderer.ansi_emitter import ANSIEmitter
         emitter=ANSIEmitter()
         return emitter.emit(self, box=box, raw=raw )

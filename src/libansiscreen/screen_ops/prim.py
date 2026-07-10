@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from typing import Optional, Dict, Callable, Tuple, Iterable
 
-from libansiscreen.screen import Screen
-from libansiscreen.cell import Cell
-from libansiscreen.screen_ops import glyph_defs as G
+from ..framebuffer import frameBuffer
+from ..cell import Cell
+from ..screen_ops import glyph_defs as G
 
 import math
 from typing import Optional, Tuple
-from libansiscreen import cell as C
-from libansiscreen.color.rgb import Color
-from libansiscreen.screen_ops import glyph_defs as G
-from libansiscreen.color.palette import create_ansi_16_palette
-from libansiscreen.screen_ops.fill import fill as cell_fill
+from ..cell import Cell as C
+from ..color.rgb import Color
+from ..screen_ops import glyph_defs as G
+from ..color.palette import create_ansi_16_palette
+from ..screen_ops.fill import fill as cell_fill
 _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG = _ANSI16.index_to_rgb(7)   # light gray
 DEFAULT_BG = _ANSI16.index_to_rgb(0)   # black
@@ -66,14 +66,14 @@ def hline(
     *,
     glyphs: Dict[str, Optional[str]],
     y: int = 0,
-    screen: Optional[Screen] = None,
+    fb: Optional[frameBuffer] = None,
     merge: bool = False,
-) -> Screen:
+) -> frameBuffer:
     if x2 < x1:
         x1, x2 = x2, x1
     width = x2 - x1 + 1
-    scr = screen or Screen(width)
-    yy = y if screen else 0
+    scr = fb or frameBuffer(width)
+    yy = y if fb else 0
     for i, x in enumerate(range(x1, x2 + 1)):
         role = "start" if i == 0 else "end" if i == width - 1 else "segment"
         g = resolve_glyph(glyphs.get(role))
@@ -94,14 +94,14 @@ def vline(
     *,
     glyphs: Dict[str, Optional[str]],
     x: int = 0,
-    screen: Optional[Screen] = None,
+    fb: Optional[frameBuffer] = None,
     merge: bool = False,
-) -> Screen:
+) -> frameBuffer:
     if y2 < y1:
         y1, y2 = y2, y1
     height = y2 - y1 + 1
-    scr = screen or Screen(1)
-    xx = x if screen else 0
+    scr = fb or frameBuffer(1)
+    xx = x if fb else 0
     for i, y in enumerate(range(y1, y2 + 1)):
         role = "start" if i == 0 else "end" if i == height - 1 else "segment"
         g = resolve_glyph(glyphs.get(role))
@@ -121,9 +121,9 @@ def box(
     h: int,
     *,
     glyphs: Dict[str, Optional[str]],
-    screen: Optional[Screen] = None,
-) -> Screen:
-    scr = screen or Screen(w)
+    fb: Optional[frameBuffer] = None,
+) -> frameBuffer:
+    scr = fb or frameBuffer(w)
     for y in range(h):
         for x in range(w):
             is_top = y == 0
@@ -155,18 +155,18 @@ def box(
 # ============================================================
 
 def stamp_from_screen(
-    source: Screen,
+    source: frameBuffer,
     *,
     transparent_chars = [None,' '],
     box: Optional[Tuple[int, int, int, int]] = None,
     border_bg=None,
-) -> Screen:
+) -> frameBuffer:
     if box:
         x0, y0, w, h = box
     else:
         x0, y0 = 0, 0
         w, h = source.width, source.height
-    out = Screen(w)
+    out = frameBuffer(w)
     # Copy / punch transparency
     for y in range(h):
         for x in range(w):
@@ -187,18 +187,18 @@ def stamp_from_screen(
             out.set_cell(w - 1, y, border_cell())
     return out
 
-def char_flood_fill(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
+def char_flood_fill(fb, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
     """
     Generate a mask from seed point that is complement of seed,
     respecting block types and optionally color/char matches.
     """
-    width, height = screen.width, screen.height
-    mask=Screen(width=width)
+    width, height = fb.width, fb.height
+    mask=frameBuffer(width=width)
     stack = [(x_seed, y_seed)]
-    seed_cell = screen.get_cell(x_seed, y_seed)
+    seed_cell = fb.get_cell(x_seed, y_seed)
     while stack:
         x, y = stack.pop()
-        cell = screen.get_cell(x, y)
+        cell = fb.get_cell(x, y)
         if mask.get_cell(x, y).char is not None:
             continue  # already visited
         fill_pixel = False
@@ -213,7 +213,7 @@ def char_flood_fill(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_col
             fill_pixel = (cell.char == seed_cell.char)
         if fill_pixel and color_ok:
             mask.set_cell(x, y, Cell(G.BLOCK_FULL, None, None))
-            screen.set_cell(x, y, cell_fill(fill))
+            fb.set_cell(x, y, cell_fill(fill))
         else:
             mask.set_cell(x, y, Cell('x', None, None))
             continue
@@ -223,23 +223,23 @@ def char_flood_fill(screen, x_seed, y_seed, ignore_fg_color=False, ignore_bg_col
                 stack.append((nx, ny))
     return mask
 
-def char_rectangle(screen,x1, y1, x2, y2, fill=DEFAULT_FG):
-    mask=Screen(width=max(x1, x2)+1)
+def char_rectangle(fb,x1, y1, x2, y2, fill=DEFAULT_FG):
+    mask=frameBuffer(width=max(x1, x2)+1)
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
             mask.set_cell(x,y,Cell(G.BLOCK_FULL,None, None))
-            screen.set_cell(x, y, cell_fill(fill))
+            fb.set_cell(x, y, cell_fill(fill))
     return mask
 
-def char_ellipse(screen,cx, cy, rx, ry,fill=DEFAULT_FG):
-    # Use screen dimensions for safe clamping
-    screen_w = cx+rx+1
-    screen_h = cy+ry+1
-    mask = Screen(width=screen_w)
+def char_ellipse(fb,cx, cy, rx, ry,fill=DEFAULT_FG):
+    # Use fb dimensions for safe clamping
+    fb_w = cx+rx+1
+    fb_h = cy+ry+1
+    mask = frameBuffer(width=fb_w)
     # Iterate from the top of the ellipse to the bottom
     for y in range(cy - ry, cy + ry + 1):
-        # Skip rows outside the screen vertical bounds
-        if y < 0 or y >= screen_h:
+        # Skip rows outside the fb vertical bounds
+        if y < 0 or y >= fb_h:
             continue
         # Standardize y relative to center
         dy = y - cy
@@ -248,12 +248,12 @@ def char_ellipse(screen,cx, cy, rx, ry,fill=DEFAULT_FG):
         h_ratio = 1 - (dy**2 / ry**2)
         if h_ratio >= 0:
             dx = int(rx * math.sqrt(h_ratio))
-            # Clamp to screen boundaries
+            # Clamp to fb boundaries
             x_left = max(0, cx - dx)
-            x_right = min(screen_w - 1, cx + dx) 
+            x_right = min(fb_w - 1, cx + dx) 
         for x in range(x_left,x_right+1):
             mask.set_cell(x,y,Cell(G.BLOCK_FULL,None,None))
-            screen.set_cell(x, y, cell_fill(fill))
+            fb.set_cell(x, y, cell_fill(fill))
     return mask
 
 

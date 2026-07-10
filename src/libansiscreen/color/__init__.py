@@ -1,2 +1,2 @@
-from libansiscreen.color.rgb import Color
-from libansiscreen.color.palette import Palette
+from ..color.rgb import Color
+from ..color.palette import Palette
