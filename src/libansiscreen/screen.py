@@ -10,20 +10,24 @@ from .color.palette import create_ansi_16_palette
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
 from .screen_ops.colorize import colorize
-from .screen_ops.clip import ( copy, clear, paste, cut )
-from .screen_ops.pixelplot import pixelplot
-from .screen_ops.pixelplot import pixelget
-from .screen_ops.pixelplot import draw_line
-from .screen_ops.pixelplot import draw_polyline
-from .screen_ops.pixelplot import draw_regular_polygon
-from .screen_ops.pixelplot import draw_regular_star
-from .screen_ops.pixelplot import flood_fill
-from .screen_ops.pixelplot import draw_rectangle
-from .screen_ops.pixelplot import draw_ellipse
-from .screen_ops.prim import char_flood_fill
-from .screen_ops.prim import char_rectangle
-from .screen_ops.prim import char_ellipse
-from .screen_ops.prim import stamp_from_screen
+from .screen_ops.clip import clear, copy, cut, paste
+from .screen_ops.pixelplot import (
+    draw_ellipse,
+    draw_line,
+    draw_polyline,
+    draw_rectangle,
+    draw_regular_polygon,
+    draw_regular_star,
+    flood_fill,
+    pixelget,
+    pixelplot,
+)
+from .screen_ops.prim import (
+    char_ellipse,
+    char_flood_fill,
+    char_rectangle,
+    stamp_from_screen,
+)
 
 # ----------------------------------------------------------------------
 # Palette-derived defaults (single source of truth)
