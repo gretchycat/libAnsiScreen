@@ -11,7 +11,7 @@ from .color.palette import create_ansi_16_palette
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
 #TODO :make each file into a framebuffer class
-from .screen_ops.colorize import colorize
+from .screen_ops.colorize import Colorize
 from .screen_ops.clip import clear, copy, cut, paste
 from .screen_ops.pixelplot import (
     draw_ellipse,
@@ -39,7 +39,7 @@ _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
 
-class Screen(frameBuffer): #TODO: add framebuffer classes once created
+class Screen(Colorize,frameBuffer):
     def print(self, s):
         parser=ANSIParser(self)
         parser.feed(s)
@@ -83,7 +83,7 @@ class Screen(frameBuffer): #TODO: add framebuffer classes once created
     # ------------------------------------------------------------------
     # coloring
     # ------------------------------------------------------------------
-    def colorize(
+    def colorizex(
         self,
         gradient,
         *,
@@ -93,7 +93,7 @@ class Screen(frameBuffer): #TODO: add framebuffer classes once created
         only_if_set: bool = True,
         tint: Optional[float] = None,
         direction: str = "tlbr"):
-        return colorize(self, gradient, mode=mode, foreground=foreground,
+        return self.colorize(gradient, mode=mode, foreground=foreground,
                           background=background, only_if_set=only_if_set,
                          tint=tint, direction=direction)
 

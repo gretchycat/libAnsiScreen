@@ -1,7 +1,6 @@
-# libansiscreen/screen.py
+# libansiscreen/framebuffer.py
 
 from typing import List, Optional
-
 from .cell import Cell
 from .cursor import Cursor
 from .color.rgb import Color
@@ -19,7 +18,7 @@ class frameBuffer():
     """
     Lossless, document-oriented screen buffer.
 
-    - Width is fixed.
+    - Width is fixed unless explicitly resized.
     - Height grows dynamically.
     - Cursor represents write position only.
     - Current graphics state (colors + attributes) is explicit.
@@ -47,6 +46,21 @@ class frameBuffer():
     def height(self) -> int:
         """Logical height of the screen."""
         return len(self.rows)
+
+    @classmethod
+    def extend(cls, instance):
+        """
+        Dynamically extends an existing instance with this mixin class.
+        """
+        base_class = instance.__class__
+        if issubclass(base_class, cls):
+            return instance
+        new_class_name = f"{cls.__name__}ed{base_class.__name__}"
+        ExtendedClass = type(new_class_name, (cls, base_class), {})
+        instance.__class__ = ExtendedClass
+        if hasattr(cls, '__init__'):
+            cls.__init__(instance, width=instance.width)
+        return instance
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -92,7 +106,7 @@ class frameBuffer():
             return None
         return self.rows[y][x]
 
-    def set_cell(self, x: int, y: int, cell: Cell) -> None:
+    def set_cell(self, x: int, y: int, cell: Cell|None) -> None:
         if x < 0 or x >= self.width:
             return
         self._ensure_row(y)
@@ -158,7 +172,7 @@ class frameBuffer():
     def line_feed(self) -> None:
         self.cursor.y += 1
 
-    def newline(self) -> None:
+    def new_line(self) -> None:
         self.cursor.x = 0
         self.cursor.y += 1
 
@@ -181,10 +195,6 @@ class frameBuffer():
         self.current_attrs &= ~attrs
 
     def reset_graphics(self) -> None:
-        """
-        Reset foreground, background, and attributes to ANSI defaults.
-        Equivalent to SGR 0.
-        """
         self.current_fg = DEFAULT_FG
         self.current_bg = DEFAULT_BG
         self.current_attrs = 0
@@ -209,7 +219,7 @@ class frameBuffer():
     def put_text(self, text: str) -> None:
         for ch in text:
             if ch == "\n":
-                self.newline()
+                self.new_line()
             elif ch == "\r":
                 self.carriage_return()
             else:
@@ -228,9 +238,6 @@ class frameBuffer():
     # Clearing operations
     # ------------------------------------------------------------------
     def cls(self) -> None:
-        """
-        Clear screen, reset cursor and graphics state.
-        """
         y=len(self.rows)-1
         self.rows.clear()
         self.cursor.reset()

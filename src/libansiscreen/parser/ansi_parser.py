@@ -113,7 +113,7 @@ class ANSIParser(frameBuffer):
         if ch == "\x1b":
             self.state = self.ESC
         elif ch == "\n":
-            self.fb.newline()
+            self.fb.new_line()
         elif ch == "\r":
             self.fb.carriage_return()
         else:

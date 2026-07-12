@@ -2,8 +2,7 @@
 from libansiscreen.screen import Screen
 from libansiscreen.color.rgb import Color
 from libansiscreen.renderer.ansi_emitter import ANSIEmitter
-
-from libansiscreen.screen_ops.colorize import colorize
+from libansiscreen.screen_ops.colorize import Colorize
 
 # ------------------------------------------------------------
 # Output directory for visual inspection
@@ -61,7 +60,7 @@ def build_solid_block_screen(
     # Clear the central region (sets char/fg/bg to None)
     clear(screen, box=center_box)
 
-    return screen
+    return Colorize.extend(screen)
 
 def build_gradient() -> list[Color]:
     """
@@ -84,8 +83,7 @@ def build_gradient() -> list[Color]:
 def colorize_horizontal_fg_only_if_set():
     screen = build_solid_block_screen()
     grad = build_gradient()
-    colorize(
-        screen,
+    screen.colorize(
         gradient=grad,
         mode="horizontal",
         only_if_set=True,
@@ -106,8 +104,7 @@ def colorize_vertical_bg_replace():
     screen = build_solid_block_screen()
     grad = build_gradient()
 
-    colorize(
-        screen,
+    screen.colorize(
         gradient=grad,
         mode="vertical",
         background=True,
@@ -125,8 +122,7 @@ def colorize_diag_tint():
     screen = build_solid_block_screen()
     grad = build_gradient()
     # First pass: hard foreground
-    colorize(
-        screen,
+    screen.colorize(
         gradient=grad,
         mode="diag",
     )
@@ -152,8 +148,7 @@ def colorize_words():
         Color(0, 0, 255),
     ]
 
-    colorize(
-        screen,
+    screen.colorize(
         gradient=grad,
         mode="words",
     )
