@@ -7,8 +7,10 @@ from .framebuffer import frameBuffer
 from .cursor import Cursor
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
+
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
+#TODO :make each file into a framebuffer class
 from .screen_ops.colorize import colorize
 from .screen_ops.clip import clear, copy, cut, paste
 from .screen_ops.pixelplot import (
@@ -37,7 +39,7 @@ _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
 
-class Screen(frameBuffer):
+class Screen(frameBuffer): #TODO: add framebuffer classes once created
     def print(self, s):
         parser=ANSIParser(self)
         parser.feed(s)
