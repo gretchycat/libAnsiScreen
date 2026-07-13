@@ -48,6 +48,9 @@ class Screen(Colorize, frameBuffer):
     def __repr__(self):
        return f'Screen ({self.width}, {self.height})'
 
+    # ------------------------------------------------------------------
+    # ANSI I/O
+    # ------------------------------------------------------------------
     def feed(self, s):
         self.parser.feed(s)
 
@@ -82,24 +85,7 @@ class Screen(Colorize, frameBuffer):
         return cut(self, box=box)
 
     # ------------------------------------------------------------------
-    # coloring
-    # ------------------------------------------------------------------
-    def colorizex(
-        self,
-        gradient,
-        *,
-        mode: str = "hgrad",
-        foreground: bool = True,
-        background: bool = False,
-        only_if_set: bool = True,
-        tint: Optional[float] = None,
-        direction: str = "tlbr"):
-        return self.colorize(gradient, mode=mode, foreground=foreground,
-                          background=background, only_if_set=only_if_set,
-                         tint=tint, direction=direction)
-
-    # ------------------------------------------------------------------
-    # block drawing
+    # half block drawing
     # ------------------------------------------------------------------
     def pixel(self, x: int, y: int, color):
         return pixelplot(self, x, y, color)
@@ -119,32 +105,15 @@ class Screen(Colorize, frameBuffer):
     def polyline(self, points, color):
         return draw_polyline(self, points, color)
 
-    def regular_polygon(
-        self,
-        cx: int,
-        cy: int,
-        radius: int,
-        sides: int,
-        color,
-        rotation: float = 0.0,
-    ):
-        return draw_regular_polygon(
-            self, cx, cy, radius, sides, color, rotation
-        )
+    def regular_polygon(self, cx: int, cy: int, radius: int,\
+                        sides: int, color, rotation: float = 0.0):
+        return draw_regular_polygon(self, cx, cy, radius,\
+                                    sides, color, rotation)
 
-    def regular_star(
-        self,
-        cx: int,
-        cy: int,
-        radius: int,
-        n: int,
-        k: int,
-        color,
-        rotation: float = 0.0,
-    ):
-        return draw_regular_star(
-            self, cx, cy, radius, n, k, color, rotation
-        )
+    def regular_star(self, cx: int, cy: int, radius: int,n: int,\
+                    k: int, color, rotation: float = 0.0):
+        return draw_regular_star(self, cx, cy, radius, n,\
+                                 k, color, rotation)
 
     def flood_fill(self, x_seed, y_seed,fill=None):
         return flood_fill(self, x_seed, y_seed, fill)
