@@ -1,7 +1,5 @@
 # ./screen.py
 
-from typing import Optional
-
 from .framebuffer import frameBuffer
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
@@ -33,8 +31,8 @@ from .screen_ops.prim import (
 # ----------------------------------------------------------------------
 _ANSI16 = create_ansi_16_palette()
 
-DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
-DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
+DEFAULT_FG = _ANSI16.index_to_rgb(7)  # light gray
+DEFAULT_BG = _ANSI16.index_to_rgb(0)  # black
 
 class Screen(Colorize, frameBuffer):
     def __init__(self, width: int, height=1):
@@ -69,10 +67,10 @@ class Screen(Colorize, frameBuffer):
     def clear(self, box = None):
         return clear(self, box=box)
 
-    def paste(dst, src, *, box = None, transparent_char = None,
+    def paste(self, src, *, box = None, transparent_char = None,
         transparent_fg = None, transparent_bg = None,
         transparent_attrs = None,) -> None:
-        return paste(dst,src,box=box,
+        return paste(self,src,box=box,
                      transparent_char=transparent_char,
                      transparent_fg=transparent_fg,
                      transparent_bg=transparent_bg,
