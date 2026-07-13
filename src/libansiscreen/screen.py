@@ -1,16 +1,13 @@
 # ./screen.py
 
-from typing import List, Optional
+from typing import Optional
 
-from .cell import Cell
 from .framebuffer import frameBuffer
-from .cursor import Cursor
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
 
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
-#TODO :make each file into a framebuffer class
 from .screen_ops.colorize import Colorize
 from .screen_ops.clip import clear, copy, cut, paste
 from .screen_ops.pixelplot import (
