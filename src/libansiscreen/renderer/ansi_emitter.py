@@ -53,7 +53,7 @@ class TerminalState:
     attrs: int  # ANSI attrs bitmask as *intended* (after DOS/ICE normalization)
 
 
-class ANSIEmitter(frameBuffer):
+class ANSIEmitter():
     """
     Emitter that diffs terminal *intent* in ANSI space.
     - Compile each cell into desired ANSI encoding (attrs + fg + bg)

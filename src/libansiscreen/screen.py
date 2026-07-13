@@ -39,25 +39,26 @@ _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
 
-class Screen(Colorize,frameBuffer):
-    def print(self, s):
-        parser=ANSIParser(self)
-        parser.feed(s)
+class Screen(Colorize, frameBuffer):
+    def __init__(self, width: int, height=1):
+        super().__init__(width=width, height=height)
+        self.parser=ANSIParser(self)
+        self.emitter=ANSIEmitter()
 
     def __repr__(self):
        return f'Screen ({self.width}, {self.height})'
 
-    def __strx__(self, box=None, raw=False):
-        emitter=ANSIEmitter()
-        return emitter.emit(self, box=box, raw=raw )
-    
+    def feed(self, s):
+        self.parser.feed(s)
+
+    def print(self, s):
+        self.parser.feed(s)
+
     def emit(self, box=None, raw=False):
-        emitter=ANSIEmitter()
-        return emitter.emit(self, box=box, raw=raw )
+        return self.emitter.emit(self, box=box, raw=raw )
 
     def emit_diff(self, prev, box=None, raw=False):
-        emitter=ANSIEmitter()
-        return emitter.emit_diff(self, prev, box=box, raw=raw )
+        return self.emitter.emit_diff(self, prev, box=box, raw=raw )
 
     # ------------------------------------------------------------------
     # Clip stuff

@@ -60,7 +60,7 @@ dec_special_graphics = {
     '~': '\u00B7',  # ·
 }
 
-class ANSIParser(frameBuffer):
+class ANSIParser():
     """
     Streaming ANSI parser that mutates a frameBuffer.
 
