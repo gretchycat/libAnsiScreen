@@ -11,8 +11,8 @@ from .color.palette import create_ansi_16_palette
 # ----------------------------------------------------------------------
 _ANSI16 = create_ansi_16_palette()
 
-DEFAULT_FG: Color = _ANSI16.index_to_rgb(7)  # light gray
-DEFAULT_BG: Color = _ANSI16.index_to_rgb(0)  # black
+DEFAULT_FG = _ANSI16.index_to_rgb(7)  # light gray
+DEFAULT_BG = _ANSI16.index_to_rgb(0)  # black
 
 class frameBuffer():
     """
@@ -66,34 +66,47 @@ class frameBuffer():
     # Internal helpers
     # ------------------------------------------------------------------
     def _ensure_row(self, y: int) -> None:
-        """Ensure row y exists."""
+        """Ensure row y exists and is allocated to the current width."""
         while y >= len(self.rows):
-            #self.rows.append([Cell() for _ in range(self.width)])
             self.rows.append([Cell(
                 char=' ',
                 fg=self.current_fg,
                 bg=self.current_bg,
-                attrs=self.current_attrs,) for _ in range(500)]) #FIXME
+                attrs=self.current_attrs,
+            ) for _ in range(self.width)])
+
+    def _ensure_columns(self, row_idx: int, target_width: int) -> None:
+        """Ensure a specific row matches the target width by expanding or truncating."""
+        row = self.rows[row_idx]
+        current_len = len(row)
+        if current_len < target_width:
+            # Pad missing cells up to target_width
+            row.extend(Cell(
+                char=' ',
+                fg=self.current_fg,
+                bg=self.current_bg,
+                attrs=self.current_attrs,
+            ) for _ in range(target_width - current_len))
+        elif current_len > target_width:
+            # Truncate excess cells down to target_width
+            del row[target_width:]
 
     def _clamp_x(self, x: int) -> int:
         return max(0, min(self.width - 1, x))
 
-    def resize(self, width, height):
-        if height>0:
-            while len(self.rows)>height:
-                self.rows.pop()
-            self._ensure_row(height)
-        if width>0:
-            addCells=width-self.width
-            self.width=width
-            if addCells>0:
-                for y in range(height): #TODO fix me
-                    for _ in range(addCells):
-                        self.rows[y].append(Cell(
-                                char=' ',
-                                fg=self.current_fg,
-                                bg=self.current_bg,
-                                attrs=self.current_attrs))
+    def resize(self, width: int, height: int) -> None:
+        """Resize the framebuffer grid to the specified width and height."""
+        # 1. Handle height structural changes
+        if height > 0:
+            if height < len(self.rows):
+                del self.rows[height+1:]
+            else:
+                self._ensure_row(height)
+        # 2. Update width tracking and normalize all existing rows
+        if width > 0:
+            self.width = width
+            for y in range(len(self.rows)):
+                self._ensure_columns(y, width)
 
     # ------------------------------------------------------------------
     # Cell access
