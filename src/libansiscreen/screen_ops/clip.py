@@ -168,3 +168,8 @@ def paste(
                     and src_cell.attrs is not None
                 ):
                     dst_cell.attrs = src_cell.attrs
+
+def tile(fb:frameBuffer, tl:frameBuffer):
+    for y in range(0, fb.height, tl.height):
+        for x in range(0,fb.width, tl.width):
+            paste(fb, tl, box=(x,y,tl.width,tl.height))

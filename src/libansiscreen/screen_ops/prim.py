@@ -256,4 +256,17 @@ def char_ellipse(fb,cx, cy, rx, ry,fill=DEFAULT_FG):
             fb.set_cell(x, y, cell_fill(fill))
     return mask
 
+def char_tile(fb, text):
+    txt=' '
+    if type(text)==str and len(text)>0:
+        txt=text
+    t=txt.split('\n')
+    h=len(t)
+    for y in range(fb.height):
+        s=t[y%h]
+        w=len(s)
+        if w:
+            for x in range(fb.width):
+                c=fb.get_cell(x,y)
+                fb.put_cell(x,y,char=t[y%h][x%w], fg=c.fg,bg=c.bg,attrs=0)
 

@@ -7,7 +7,7 @@ from .color.palette import create_ansi_16_palette
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
 from .screen_ops.colorize import Colorize
-from .screen_ops.clip import clear, copy, cut, paste
+from .screen_ops.clip import clear, copy, cut, paste, tile
 from .screen_ops.pixelplot import (
     draw_ellipse,
     draw_line,
@@ -24,6 +24,7 @@ from .screen_ops.prim import (
     char_flood_fill,
     char_rectangle,
     stamp_from_screen,
+    char_tile,
 )
 
 # ----------------------------------------------------------------------
@@ -78,6 +79,9 @@ class Screen(Colorize, frameBuffer):
 
     def cut(self, box = None):
         return cut(self, box=box)
+
+    def tile(self, tl):
+        return tile(self.tl)
 
     # ------------------------------------------------------------------
     # half block drawing
@@ -134,3 +138,5 @@ class Screen(Colorize, frameBuffer):
     def stamp_from_screen(self,transparent_chars=None,box=None,border_bg=None):
         return stamp_from_screen(self,transparent_chars,box,border_bg)
 
+    def char_tile(self, text):
+        return char_tile(self, text)
