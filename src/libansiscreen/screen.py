@@ -19,6 +19,18 @@ from .screen_ops.pixelplot import (
     pixelget,
     pixelplot,
 )
+from .screen_ops.brailleplot import (
+    braille_draw_ellipse,
+    braille_draw_line,
+    braille_draw_ellipse,
+    braille_draw_polyline,
+    braille_draw_rectangle,
+    braille_draw_regular_polygon,
+    braille_draw_regular_star,
+    braille_flood_fill,
+    braille_get,
+    braille_plot,
+)
 from .screen_ops.prim import (
     char_ellipse,
     char_flood_fill,
@@ -124,6 +136,40 @@ class Screen(Colorize, frameBuffer):
         return draw_ellipse(self, cx, cy, rx, ry, fill)
 
     # ------------------------------------------------------------------
+    # braille drawing
+    # ------------------------------------------------------------------
+    def braille_plot(self, x: int, y: int, state):
+        return braille_plot(self, x, y, state)
+
+    def braille_get(self, x: int, y: int):
+        return braille_get(self, x, y)
+
+    def braille_line(self, x0: int, y0: int, x1: int, y1: int, state):
+        return braille_draw_line(self, x0, y0, x1, y1, state)
+
+    def braille_polyline(self, points, state):
+        return braille_draw_polyline(self, points, state)
+
+    def braille_regular_polygon(self, cx: int, cy: int, radius: int,\
+                        sides: int, state, rotation: float = 0.0):
+        return braille_draw_regular_polygon(self, cx, cy, radius,\
+                                    sides, state, rotation)
+
+    def braille_regular_star(self, cx: int, cy: int, radius: int,n: int,\
+                    k: int, state, rotation: float = 0.0):
+        return braille_draw_regular_star(self, cx, cy, radius, n,\
+                                 k, state, rotation)
+
+    def braille_flood_fill(self, x_seed, y_seed,state):
+        return braille_flood_fill(self, x_seed, y_seed, state)
+
+    def braille_rectangle(self,x1, y1, x2, y2,state):
+        return braille_draw_rectangle(self,x1, y1, x2, y2,state)
+
+    def braille_ellipse(self, cx, cy, rx, ry, state):
+        return braille_draw_ellipse(self, cx, cy, rx, ry, state)
+
+    # ------------------------------------------------------------------
     # full-block drawing
     # ------------------------------------------------------------------
     def char_flood_fill(self, x_seed, y_seed, ignore_fg_color=False, ignore_bg_color=False,fill=DEFAULT_FG):
@@ -140,3 +186,4 @@ class Screen(Colorize, frameBuffer):
 
     def char_tile(self, text):
         return char_tile(self, text)
+
