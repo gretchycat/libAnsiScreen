@@ -145,7 +145,7 @@ class Screen(Colorize, frameBuffer):
         return spixel_get(self, x, y,mode)
 
     def spixel_line(self, x0: int, y0: int, x1: int, y1: int, state, mode='octant'):
-        return spixel_draw_line(self, x0, y0, x1, y1, state)
+        return spixel_draw_line(self, x0, y0, x1, y1, state, mode=mode)
 
     def spixel_polyline(self, points, state):
         return spixel_draw_polyline(self, points, state, mode='octant')
@@ -153,21 +153,21 @@ class Screen(Colorize, frameBuffer):
     def spixel_regular_polygon(self, cx: int, cy: int, radius: int,\
                         sides: int, state, rotation: float = 0.0, mode='octant'):
         return spixel_draw_regular_polygon(self, cx, cy, radius,\
-                                    sides, state, rotation)
+                                    sides, state, rotation, mode=mode)
 
     def spixel_regular_star(self, cx: int, cy: int, radius: int,n: int,\
                     k: int, state, rotation: float = 0.0, mode='octant'):
         return spixel_draw_regular_star(self, cx, cy, radius, n,\
-                                 k, state, rotation)
+                                 k, state, rotation, mode=mode)
 
     def spixel_flood_fill(self, x_seed, y_seed,state, mode='octant'):
-        return spixel_flood_fill(self, x_seed, y_seed, state)
+        return spixel_flood_fill(self, x_seed, y_seed, state, mode=mode)
 
     def spixel_rectangle(self,x1, y1, x2, y2,state, mode='octant'):
-        return spixel_draw_rectangle(self,x1, y1, x2, y2,state)
+        return spixel_draw_rectangle(self,x1, y1, x2, y2,state, mode=mode)
 
     def spixel_ellipse(self, cx, cy, rx, ry, state, mode='octant'):
-        return spixel_draw_ellipse(self, cx, cy, rx, ry, state)
+        return spixel_draw_ellipse(self, cx, cy, rx, ry, state, mode=mode)
 
     # ------------------------------------------------------------------
     # full-block drawing
