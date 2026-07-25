@@ -20,7 +20,7 @@ MID  = Color(128, 128, 128)
 BRIGHT = Color(250, 250, 250)
 
 from libansiscreen.screen import Screen
-from libansiscreen.screen_ops.pixelplot import pixel
+from libansiscreen.screen_ops.pixel import pixel_plot
 
 def run_pixel(initial_cell, plot_y, color):
     """
@@ -33,7 +33,7 @@ def run_pixel(initial_cell, plot_y, color):
     if initial_cell is not None:
         screen.set_cell(0, 0, initial_cell)
 
-    pixel(screen, 0, plot_y, color)
+    pixel_plot(screen, 0, plot_y, color)
     return screen.get_cell(0, 0)
 
 def emit(screen: Screen, name: str):

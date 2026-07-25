@@ -32,7 +32,7 @@ def make_cell(c1, c2):
         return Cell(G.BLOCK_TOP, c1, c2)
     return Cell(G.BLOCK_BOTTOM, c2, c1)
 
-def pixelplot(fb, x, y, color):
+def pixel_plot(fb, x, y, color):
     c=fb.get_cell(x, y//2)
     if c:
         if y%2==0: #top block
@@ -55,10 +55,10 @@ def pixelplot(fb, x, y, color):
                 c=make_cell(c.bg, color)
         fb.set_cell(x,y//2, c)
 
-pixel=pixelplot
+pixel=pixel_plot
 plot=pixel
 
-def pixelget(fb, x, y):
+def pixel_get(fb, x, y):
     c=fb.get_cell(x, y//2)
     color=DEFAULT_BG
     if c:
@@ -84,7 +84,7 @@ def pixelget(fb, x, y):
 
 def draw_line(fb, x0, y0, x1, y1, color):
     """
-    Draw a line from (x0, y0) to (x1, y1) using pixelplot.
+    Draw a line from (x0, y0) to (x1, y1) using pixel_plot.
     Works for all slopes, arbitrary start/end.
     """
     dx = abs(x1 - x0)
@@ -97,7 +97,7 @@ def draw_line(fb, x0, y0, x1, y1, color):
     if dx > dy:
         err = dx // 2
         while x != x1:
-            pixelplot(fb, x, y, color)
+            pixel_plot(fb, x, y, color)
             err -= dy
             if err < 0:
                 y += sy
@@ -106,14 +106,14 @@ def draw_line(fb, x0, y0, x1, y1, color):
     else:
         err = dy // 2
         while y != y1:
-            pixelplot(fb, x, y, color)
+            pixel_plot(fb, x, y, color)
             err -= dx
             if err < 0:
                 x += sx
                 err += dy
             y += sy
     # plot last point
-    pixelplot(fb, x1, y1, color)
+    pixel_plot(fb, x1, y1, color)
 
 def draw_polyline(fb, points, color):
     """
@@ -193,11 +193,11 @@ def flood_fill(fb, x_seed, y_seed,fill=None):
     width, height = fb.width, fb.height*2
     mask=frameBuffer(width=width)
     stack = [(x_seed, y_seed)]
-    seed_color = pixelget(fb, x_seed,y_seed)
+    seed_color = pixel_get(fb, x_seed,y_seed)
     while stack:
         x, y = stack.pop()
         mcell=mask.get_cell(x, y//2)
-        if pixelget(mask, x, y) == DEFAULT_FG:
+        if pixel_get(mask, x, y) == DEFAULT_FG:
             continue    # already visited
         mcell=mask.get_cell(x, y//2)
         if y%2==1:
@@ -206,12 +206,12 @@ def flood_fill(fb, x_seed, y_seed,fill=None):
         else:
             if mcell.attrs & C.ATTR_STRIKE:
                 continue  # already visited
-        colorx = pixelget(fb, x, y)
+        colorx = pixel_get(fb, x, y)
         # Decide if this pixel is part of fill region
         if colorx==seed_color:
-            pixelplot(mask, x,y,DEFAULT_FG)
+            pixel_plot(mask, x,y,DEFAULT_FG)
             if fill:
-                pixelplot(fb,x,y,block_fill(fill))
+                pixel_plot(fb,x,y,block_fill(fill))
         else:
             mcell=mask.get_cell(x, y//2)
             a=mcell.attrs or 0
@@ -230,9 +230,9 @@ def draw_rectangle(fb,x1, y1, x2, y2,fill=None):
     mask=frameBuffer(width=max(x1, x2)+1)
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
-            pixelplot(mask, x,y,DEFAULT_FG)
+            pixel_plot(mask, x,y,DEFAULT_FG)
             if fb and fill:
-                pixelplot(fb, x,y,block_fill(fill))
+                pixel_plot(fb, x,y,block_fill(fill))
     return mask
 
 def draw_ellipse(fb, cx, cy, rx, ry, fill=None):

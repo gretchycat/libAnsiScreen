@@ -1,14 +1,13 @@
 # ./screen.py
 
 from .framebuffer import frameBuffer
-from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
-
 from .parser.ansi_parser import ANSIParser
 from .renderer.ansi_emitter import ANSIEmitter
 from .screen_ops.colorize import Colorize
 from .screen_ops.clip import clear, copy, cut, paste, tile
-from .screen_ops.pixelplot import (
+
+from .screen_ops.pixel import (
     draw_ellipse,
     draw_line,
     draw_polyline,
@@ -16,21 +15,22 @@ from .screen_ops.pixelplot import (
     draw_regular_polygon,
     draw_regular_star,
     flood_fill,
-    pixelget,
-    pixelplot,
+    pixel_get,
+    pixel_plot,
 )
-from .screen_ops.brailleplot import (
-    braille_draw_ellipse,
-    braille_draw_line,
-    braille_draw_ellipse,
-    braille_draw_polyline,
-    braille_draw_rectangle,
-    braille_draw_regular_polygon,
-    braille_draw_regular_star,
-    braille_flood_fill,
-    braille_get,
-    braille_plot,
+
+from .screen_ops.spixel import (
+    spixel_draw_ellipse,
+    spixel_draw_line,
+    spixel_draw_polyline,
+    spixel_draw_rectangle,
+    spixel_draw_regular_polygon,
+    spixel_draw_regular_star,
+    spixel_flood_fill,
+    spixel_get,
+    spixel_plot,
 )
+
 from .screen_ops.prim import (
     char_ellipse,
     char_flood_fill,
@@ -99,16 +99,16 @@ class Screen(Colorize, frameBuffer):
     # half block drawing
     # ------------------------------------------------------------------
     def pixel(self, x: int, y: int, color):
-        return pixelplot(self, x, y, color)
+        return pixel_plot(self, x, y, color)
 
     def plot(self, x: int, y: int, color):
-        return pixelplot(self, x, y, color)
+        return pixel_plot(self, x, y, color)
 
-    def pixelplot(self, x: int, y: int, color):
-        return pixelplot(self, x, y, color)
+    def pixel_plot(self, x: int, y: int, color):
+        return pixel_plot(self, x, y, color)
 
-    def pixelget(self, x: int, y: int):
-        return pixelget(self, x, y)
+    def pixel_get(self, x: int, y: int):
+        return pixel_get(self, x, y)
 
     def line(self, x0: int, y0: int, x1: int, y1: int, color):
         return draw_line(self, x0, y0, x1, y1, color)
@@ -136,38 +136,38 @@ class Screen(Colorize, frameBuffer):
         return draw_ellipse(self, cx, cy, rx, ry, fill)
 
     # ------------------------------------------------------------------
-    # braille drawing
+    # spixel drawing
     # ------------------------------------------------------------------
-    def braille_plot(self, x: int, y: int, state):
-        return braille_plot(self, x, y, state)
+    def spixel_plot(self, x: int, y: int, state):
+        return spixel_plot(self, x, y, state)
 
-    def braille_get(self, x: int, y: int):
-        return braille_get(self, x, y)
+    def spixel_get(self, x: int, y: int):
+        return spixel_get(self, x, y)
 
-    def braille_line(self, x0: int, y0: int, x1: int, y1: int, state):
-        return braille_draw_line(self, x0, y0, x1, y1, state)
+    def spixel_line(self, x0: int, y0: int, x1: int, y1: int, state):
+        return spixel_draw_line(self, x0, y0, x1, y1, state)
 
-    def braille_polyline(self, points, state):
-        return braille_draw_polyline(self, points, state)
+    def spixel_polyline(self, points, state):
+        return spixel_draw_polyline(self, points, state)
 
-    def braille_regular_polygon(self, cx: int, cy: int, radius: int,\
+    def spixel_regular_polygon(self, cx: int, cy: int, radius: int,\
                         sides: int, state, rotation: float = 0.0):
-        return braille_draw_regular_polygon(self, cx, cy, radius,\
+        return spixel_draw_regular_polygon(self, cx, cy, radius,\
                                     sides, state, rotation)
 
-    def braille_regular_star(self, cx: int, cy: int, radius: int,n: int,\
+    def spixel_regular_star(self, cx: int, cy: int, radius: int,n: int,\
                     k: int, state, rotation: float = 0.0):
-        return braille_draw_regular_star(self, cx, cy, radius, n,\
+        return spixel_draw_regular_star(self, cx, cy, radius, n,\
                                  k, state, rotation)
 
-    def braille_flood_fill(self, x_seed, y_seed,state):
-        return braille_flood_fill(self, x_seed, y_seed, state)
+    def spixel_flood_fill(self, x_seed, y_seed,state):
+        return spixel_flood_fill(self, x_seed, y_seed, state)
 
-    def braille_rectangle(self,x1, y1, x2, y2,state):
-        return braille_draw_rectangle(self,x1, y1, x2, y2,state)
+    def spixel_rectangle(self,x1, y1, x2, y2,state):
+        return spixel_draw_rectangle(self,x1, y1, x2, y2,state)
 
-    def braille_ellipse(self, cx, cy, rx, ry, state):
-        return braille_draw_ellipse(self, cx, cy, rx, ry, state)
+    def spixel_ellipse(self, cx, cy, rx, ry, state):
+        return spixel_draw_ellipse(self, cx, cy, rx, ry, state)
 
     # ------------------------------------------------------------------
     # full-block drawing
