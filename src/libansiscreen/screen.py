@@ -133,7 +133,7 @@ class Screen(Colorize, frameBuffer):
         return pixel_ellipse(self, cx, cy, rx, ry, fill)
 
     # ------------------------------------------------------------------
-    # spixel drawing
+    # monochrome quadrant, octant, braille drawing
     # ------------------------------------------------------------------
     def spixel_plot(self, x: int, y: int, state, mode='octant'):
         return spixel_plot(self, x, y, state,mode)
@@ -167,31 +167,31 @@ class Screen(Colorize, frameBuffer):
         return spixel_ellipse(self, cx, cy, rx, ry, state, mode=mode)
 
     # ------------------------------------------------------------------
-    # block drawing
+    # universal drawing
     # ------------------------------------------------------------------
     def plot(self, x: int, y: int, state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_plot(self, x, y, state)
         return spixel_plot(self, x, y, state,mode)
 
     def get(self, x: int, y: int, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_get(self, x, y)
         return spixel_get(self, x, y,mode)
 
     def line(self, x0: int, y0: int, x1: int, y1: int, state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_line(self, x0, y0, x1, y1, state)
         return spixel_line(self, x0, y0, x1, y1, state, mode=mode)
 
     def polyline(self, points, state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_polyline(self, points, state)
         return spixel_polyline(self, points, state, mode=None)
 
     def regular_polygon(self, cx: int, cy: int, radius: int,\
                         sides: int, state, rotation: float = 0.0, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_regular_polygon(self, cx, cy, radius,\
                                     sides, state, rotation)
         return spixel_regular_polygon(self, cx, cy, radius,\
@@ -199,24 +199,24 @@ class Screen(Colorize, frameBuffer):
 
     def regular_star(self, cx: int, cy: int, radius: int,n: int,\
                     k: int, state, rotation: float = 0.0, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_regular_star(self, cx, cy, radius, n,\
                                  k, state, rotation)
         return spixel_regular_star(self, cx, cy, radius, n,\
                                  k, state, rotation, mode=mode)
 
     def flood_fill(self, x_seed, y_seed,state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_flood_fill(self, x_seed, y_seed, state)
         return spixel_flood_fill(self, x_seed, y_seed, state, mode=mode)
 
     def rectangle(self,x1, y1, x2, y2,state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_rectangle(self,x1, y1, x2, y2,state)
         return spixel_rectangle(self,x1, y1, x2, y2,state, mode=mode)
 
     def ellipse(self, cx, cy, rx, ry, state, mode=None):
-        if mode is None:
+        if mode in [ None, 'half' ]:
             return pixel_ellipse(self, cx, cy, rx, ry, state)
         return spixel_ellipse(self, cx, cy, rx, ry, state, mode=mode)
 
