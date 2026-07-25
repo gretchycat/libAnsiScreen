@@ -162,19 +162,19 @@ class TestScreenDrawing(unittest.TestCase):
         cyan=Color(0, 255, 255)
         yellow = Color(255, 255, 0)
         self.screen.regular_polygon(10, 10, 7, 12, cyan)
-        emit(self.screen, 'pixel-floodfill-src2.ans')
+        emit(self.screen, 'pixel_floodfill-src2.ans')
         self.screen.flood_fill(10,10, yellow)
-        emit(self.screen, 'pixel-floodfill-dst2.ans')
+        emit(self.screen, 'pixel_floodfill-dst2.ans')
 
-    def test_draw_rectangle(self):
+    def test_pixel_rectangle(self):
         green = Color(0, 255, 0)
-        self.screen.draw_rectangle(4, 5, 27, 12,green)
-        emit(self.screen, 'pixel_draw_rectangle.ans')
+        self.screen.pixel_rectangle(4, 5, 27, 12,green)
+        emit(self.screen, 'pixel_rectangle.ans')
 
-    def test_draw_ellipse(self):
+    def test_pixel_ellipse(self):
         red= Color(255, 0,0)
-        self.screen.draw_ellipse(10, 10, 9, 4,red)
-        emit(self.screen, 'pixel_draw_ellipse.ans')
+        self.screen.pixel_ellipse(10, 10, 9, 4,red)
+        emit(self.screen, 'pixel_ellipse.ans')
 
  
 

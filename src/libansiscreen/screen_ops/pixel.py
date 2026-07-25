@@ -82,7 +82,7 @@ def pixel_get(fb, x, y):
                 color=c.bg or DEFAULT_BG
     return color
 
-def draw_line(fb, x0, y0, x1, y1, color):
+def pixel_line(fb, x0, y0, x1, y1, color):
     """
     Draw a line from (x0, y0) to (x1, y1) using pixel_plot.
     Works for all slopes, arbitrary start/end.
@@ -115,7 +115,7 @@ def draw_line(fb, x0, y0, x1, y1, color):
     # plot last point
     pixel_plot(fb, x1, y1, color)
 
-def draw_polyline(fb, points, color):
+def pixel_polyline(fb, points, color):
     """
     Draw multiple connected lines.
     points: list of (x, y) tuples
@@ -127,7 +127,7 @@ def draw_polyline(fb, points, color):
     for i in range(len(points) - 1):
         x0, y0 = points[i]
         x1, y1 = points[i + 1]
-        draw_line(fb, x0, y0, x1, y1, color)
+        pixel_line(fb, x0, y0, x1, y1, color)
 
 def regular_polygon(cx, cy, radius, sides, rotation=0.0):
     points = []
@@ -142,12 +142,12 @@ def regular_polygon(cx, cy, radius, sides, rotation=0.0):
     points.append(points[0])  # close the shape
     return points
 
-def draw_regular_polygon(fb, cx, cy, radius, sides, color, rotation=0.0):
+def pixel_regular_polygon(fb, cx, cy, radius, sides, color, rotation=0.0):
     """
     Draw a regular convex polygon by generating vertices and drawing a polyline.
     """
     points = regular_polygon(cx, cy, radius, sides, rotation)
-    draw_polyline(fb, points, color)
+    pixel_polyline(fb, points, color)
 
 def regular_star(cx, cy, radius, n, k, rotation=0.0):
     import math
@@ -178,14 +178,14 @@ def regular_star(cx, cy, radius, n, k, rotation=0.0):
     points.append(points[0])  # close
     return points
 
-def draw_regular_star(fb, cx, cy, radius, n, k, color, rotation=0.0):
+def pixel_regular_star(fb, cx, cy, radius, n, k, color, rotation=0.0):
     """
     Draw a regular star polygon {n/k}.
     """
     points = regular_star(cx, cy, radius, n, k, rotation)
-    draw_polyline(fb, points, color)
+    pixel_polyline(fb, points, color)
 
-def flood_fill(fb, x_seed, y_seed,fill=None):
+def pixel_flood_fill(fb, x_seed, y_seed,fill=None):
     """
     Generate a mask from seed point that is complement of seed,
     respecting block types and optionally color/char matches.
@@ -226,7 +226,7 @@ def flood_fill(fb, x_seed, y_seed,fill=None):
                 stack.append((nx, ny))
     return mask
 
-def draw_rectangle(fb,x1, y1, x2, y2,fill=None):
+def pixel_rectangle(fb,x1, y1, x2, y2,fill=None):
     mask=frameBuffer(width=max(x1, x2)+1)
     for y in range(min(y1,y2), max(y1,y2)):
         for x in range(min(x1,x2),max(x1,x2)):
@@ -235,7 +235,7 @@ def draw_rectangle(fb,x1, y1, x2, y2,fill=None):
                 pixel_plot(fb, x,y,block_fill(fill))
     return mask
 
-def draw_ellipse(fb, cx, cy, rx, ry, fill=None):
+def pixel_ellipse(fb, cx, cy, rx, ry, fill=None):
     # Use fb dimensions for safe clamping
     fb_w = cx+rx+1
     fb_h = cy+ry+1
@@ -255,8 +255,8 @@ def draw_ellipse(fb, cx, cy, rx, ry, fill=None):
             # Clamp to fb boundaries
             x_left = max(0, cx - dx)
             x_right = min(fb_w - 1, cx + dx)
-            draw_line(mask, x_left, y, x_right, y, DEFAULT_FG)
+            pixel_line(mask, x_left, y, x_right, y, DEFAULT_FG)
             if fb and fill:
-                draw_line(fb, x_left,y,x_right, y, block_fill(fill))
+                pixel_line(fb, x_left,y,x_right, y, block_fill(fill))
     return mask
 
