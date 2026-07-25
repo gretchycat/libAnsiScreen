@@ -84,7 +84,7 @@ QUADRANT_MAP = {char: mask for mask, char in enumerate(QUADRANT_CHARS)}
 # ==============================================================================
 # HELPERS & PLOTTING FUNCTIONS
 # ==============================================================================
-def is_subpixel_char(char, mode=MODE_BRAILLE):
+def is_subpixel_char(char, mode=MODE_OCTANT):
     if not (isinstance(char, str) and len(char) == 1):
         return False
     if mode == MODE_BRAILLE:
@@ -95,7 +95,7 @@ def is_subpixel_char(char, mode=MODE_BRAILLE):
         return char in QUADRANT_MAP
     return False
 
-def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_BRAILLE):
+def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_OCTANT):
     vx = x // 2
     vy = y // 2
     bx = x % 2
@@ -132,7 +132,7 @@ def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_BRAILLE):
         current.char = QUADRANT_CHARS[bitmask]
     fb.set_cell(vx,vy, current)
 
-def spixel_get(fb: frameBuffer, x, y, mode=MODE_BRAILLE):
+def spixel_get(fb: frameBuffer, x, y, mode=MODE_OCTANT):
     vx = x // 2
     vy = y // 2
     bx = x % 2
@@ -156,7 +156,7 @@ def spixel_get(fb: frameBuffer, x, y, mode=MODE_BRAILLE):
         return bool(bitmask & mask)
     return False
 
-def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state):
+def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state, mode=MODE_OCTANT):
     """
     Draw a line from (x0, y0) to (x1, y1) using pixelplot.
     Works for all slopes, arbitrary start/end.
@@ -171,7 +171,7 @@ def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state):
     if dx > dy:
         err = dx // 2
         while x != x1:
-            spixel_plot(fb, x, y, state)
+            spixel_plot(fb, x, y, state, mode=mode)
             err -= dy
             if err < 0:
                 y += sy
@@ -180,16 +180,16 @@ def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state):
     else:
         err = dy // 2
         while y != y1:
-            spixel_plot(fb, x, y, state)
+            spixel_plot(fb, x, y, state, mode=mode)
             err -= dx
             if err < 0:
                 x += sx
                 err += dy
             y += sy
     # plot last point
-    spixel_plot(fb, x1, y1, state)
+    spixel_plot(fb, x1, y1, state, mode=mode)
 
-def spixel_draw_polyline(fb:frameBuffer, points, state):
+def spixel_draw_polyline(fb:frameBuffer, points, state, mode=MODE_OCTANT):
     """
     Draw multiple connected lines.
     points: list of (x, y) tuples
@@ -201,23 +201,23 @@ def spixel_draw_polyline(fb:frameBuffer, points, state):
     for i in range(len(points) - 1):
         x0, y0 = points[i]
         x1, y1 = points[i + 1]
-        spixel_draw_line(fb, x0, y0, x1, y1, state)
+        spixel_draw_line(fb, x0, y0, x1, y1, state, mode=mode)
 
-def spixel_draw_regular_polygon(fb:frameBuffer, cx, cy, radius, sides, state, rotation=0.0):
+def spixel_draw_regular_polygon(fb:frameBuffer, cx, cy, radius, sides, state, rotation=0.0, mode=MODE_OCTANT):
     """
     Draw a regular convex polygon by generating vertices and drawing a polyline.
     """
     points = regular_polygon(cx, cy, radius, sides, rotation)
-    spixel_draw_polyline(fb, points, state)
+    spixel_draw_polyline(fb, points, state, mode=mode)
 
-def spixel_draw_regular_star(fb:frameBuffer, cx, cy, radius, n, k, state, rotation=0.0):
+def spixel_draw_regular_star(fb:frameBuffer, cx, cy, radius, n, k, state, rotation=0.0, mode=MODE_OCTANT):
     """
     Draw a regular star polygon {n/k}.
     """
     points = regular_star(cx, cy, radius, n, k, rotation)
-    spixel_draw_polyline(fb, points, state)
+    spixel_draw_polyline(fb, points, state, mode=mode)
 
-def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool):
+def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool, mode=MODE_OCTANT):
     """
     4-way stack-based flood fill on the virtual octant pixel grid.
     Replaces contiguous pixels matching the state at (x_seed, y_seed) with `state`.
@@ -231,7 +231,7 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool):
         return
 
     # Get initial pixel state at seed point
-    target_state = spixel_get(fb, x_seed, y_seed)
+    target_state = spixel_get(fb, x_seed, y_seed, mode=mode)
 
     # Nothing to fill if seed pixel is already set to target fill state
     if target_state == state:
@@ -252,8 +252,8 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool):
             continue
 
         # Match pixel state to target_state
-        if spixel_get(fb, x, y) == target_state:
-            spixel_plot(fb, x, y, state)
+        if spixel_get(fb, x, y, mode=mode) == target_state:
+            spixel_plot(fb, x, y, state, mode=mode)
             
             # Push 4-way adjacent pixels
             stack.append((x + 1, y))
@@ -261,22 +261,22 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool):
             stack.append((x, y + 1))
             stack.append((x, y - 1))
 
-def spixel_draw_rectangle(fb:frameBuffer, x1, y1, x2, y2, state, fill=False):
+def spixel_draw_rectangle(fb:frameBuffer, x1, y1, x2, y2, state, fill=False, mode=MODE_OCTANT):
     min_x, max_x = min(x1, x2), max(x1, x2)
     min_y, max_y = min(y1, y2), max(y1, y2)
 
     if fill:
         for y in range(min_y, max_y + 1):
-            spixel_draw_line(fb, min_x, y, max_x, y, state)
+            spixel_draw_line(fb, min_x, y, max_x, y, state, mode=mode)
     else:
         # Top and bottom horizontal edges
-        spixel_draw_line(fb, min_x, min_y, max_x, min_y, state)
-        spixel_draw_line(fb, min_x, max_y, max_x, max_y, state)
+        spixel_draw_line(fb, min_x, min_y, max_x, min_y, state, mode=mode)
+        spixel_draw_line(fb, min_x, max_y, max_x, max_y, state, mode=mode)
         # Left and right vertical edges
-        spixel_draw_line(fb, min_x, min_y, min_x, max_y, state)
-        spixel_draw_line(fb, max_x, min_y, max_x, max_y, state)
+        spixel_draw_line(fb, min_x, min_y, min_x, max_y, state, mode=mode)
+        spixel_draw_line(fb, max_x, min_y, max_x, max_y, state, mode=mode)
 
-def spixel_draw_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False):
+def spixel_draw_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False, mode=MODE_OCTANT):
     if rx <= 0 or ry <= 0:
         return
 
@@ -289,8 +289,8 @@ def spixel_draw_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False):
             x_right = cx + dx
 
             if fill:
-                spixel_draw_line(fb, x_left, y, x_right, y, state)
+                spixel_draw_line(fb, x_left, y, x_right, y, state, mode=mode)
             else:
-                spixel_plot(fb, x_left, y, state)
-                spixel_plot(fb, x_right, y, state)
+                spixel_plot(fb, x_left, y, state, mode=mode)
+                spixel_plot(fb, x_right, y, state, mode=mode)
 
