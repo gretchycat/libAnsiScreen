@@ -49,7 +49,7 @@ class TestScreenDrawing(unittest.TestCase):
 
     def test_pixel(self):
         red = Color(255, 0, 0)
-        self.screen.pixel(4, 5, red)
+        self.screen.plot(4, 5, red)
         emit(self.screen, 'pixel.ans')
         c = self.screen.get_cell(4, 5 // 2)
         self.assertIsNotNone(c)

@@ -156,7 +156,7 @@ def spixel_get(fb: frameBuffer, x, y, mode=MODE_OCTANT):
         return bool(bitmask & mask)
     return False
 
-def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state, mode=MODE_OCTANT):
+def spixel_line(fb:frameBuffer, x0, y0, x1, y1, state, mode=MODE_OCTANT):
     """
     Draw a line from (x0, y0) to (x1, y1) using pixelplot.
     Works for all slopes, arbitrary start/end.
@@ -189,7 +189,7 @@ def spixel_draw_line(fb:frameBuffer, x0, y0, x1, y1, state, mode=MODE_OCTANT):
     # plot last point
     spixel_plot(fb, x1, y1, state, mode=mode)
 
-def spixel_draw_polyline(fb:frameBuffer, points, state, mode=MODE_OCTANT):
+def spixel_polyline(fb:frameBuffer, points, state, mode=MODE_OCTANT):
     """
     Draw multiple connected lines.
     points: list of (x, y) tuples
@@ -201,21 +201,21 @@ def spixel_draw_polyline(fb:frameBuffer, points, state, mode=MODE_OCTANT):
     for i in range(len(points) - 1):
         x0, y0 = points[i]
         x1, y1 = points[i + 1]
-        spixel_draw_line(fb, x0, y0, x1, y1, state, mode=mode)
+        spixel_line(fb, x0, y0, x1, y1, state, mode=mode)
 
-def spixel_draw_regular_polygon(fb:frameBuffer, cx, cy, radius, sides, state, rotation=0.0, mode=MODE_OCTANT):
+def spixel_regular_polygon(fb:frameBuffer, cx, cy, radius, sides, state, rotation=0.0, mode=MODE_OCTANT):
     """
     Draw a regular convex polygon by generating vertices and drawing a polyline.
     """
     points = regular_polygon(cx, cy, radius, sides, rotation)
-    spixel_draw_polyline(fb, points, state, mode=mode)
+    spixel_polyline(fb, points, state, mode=mode)
 
-def spixel_draw_regular_star(fb:frameBuffer, cx, cy, radius, n, k, state, rotation=0.0, mode=MODE_OCTANT):
+def spixel_regular_star(fb:frameBuffer, cx, cy, radius, n, k, state, rotation=0.0, mode=MODE_OCTANT):
     """
     Draw a regular star polygon {n/k}.
     """
     points = regular_star(cx, cy, radius, n, k, rotation)
-    spixel_draw_polyline(fb, points, state, mode=mode)
+    spixel_polyline(fb, points, state, mode=mode)
 
 def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool, mode=MODE_OCTANT):
     """
@@ -261,22 +261,22 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool, mod
             stack.append((x, y + 1))
             stack.append((x, y - 1))
 
-def spixel_draw_rectangle(fb:frameBuffer, x1, y1, x2, y2, state, fill=False, mode=MODE_OCTANT):
+def spixel_rectangle(fb:frameBuffer, x1, y1, x2, y2, state, fill=False, mode=MODE_OCTANT):
     min_x, max_x = min(x1, x2), max(x1, x2)
     min_y, max_y = min(y1, y2), max(y1, y2)
 
     if fill:
         for y in range(min_y, max_y + 1):
-            spixel_draw_line(fb, min_x, y, max_x, y, state, mode=mode)
+            spixel_line(fb, min_x, y, max_x, y, state, mode=mode)
     else:
         # Top and bottom horizontal edges
-        spixel_draw_line(fb, min_x, min_y, max_x, min_y, state, mode=mode)
-        spixel_draw_line(fb, min_x, max_y, max_x, max_y, state, mode=mode)
+        spixel_line(fb, min_x, min_y, max_x, min_y, state, mode=mode)
+        spixel_line(fb, min_x, max_y, max_x, max_y, state, mode=mode)
         # Left and right vertical edges
-        spixel_draw_line(fb, min_x, min_y, min_x, max_y, state, mode=mode)
-        spixel_draw_line(fb, max_x, min_y, max_x, max_y, state, mode=mode)
+        spixel_line(fb, min_x, min_y, min_x, max_y, state, mode=mode)
+        spixel_line(fb, max_x, min_y, max_x, max_y, state, mode=mode)
 
-def spixel_draw_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False, mode=MODE_OCTANT):
+def spixel_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False, mode=MODE_OCTANT):
     if rx <= 0 or ry <= 0:
         return
 
@@ -289,7 +289,7 @@ def spixel_draw_ellipse(fb:frameBuffer, cx, cy, rx, ry, state, fill=False, mode=
             x_right = cx + dx
 
             if fill:
-                spixel_draw_line(fb, x_left, y, x_right, y, state, mode=mode)
+                spixel_line(fb, x_left, y, x_right, y, state, mode=mode)
             else:
                 spixel_plot(fb, x_left, y, state, mode=mode)
                 spixel_plot(fb, x_right, y, state, mode=mode)

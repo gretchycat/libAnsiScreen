@@ -20,12 +20,12 @@ from .screen_ops.pixel import (
 )
 
 from .screen_ops.spixel import (
-    spixel_draw_ellipse,
-    spixel_draw_line,
-    spixel_draw_polyline,
-    spixel_draw_rectangle,
-    spixel_draw_regular_polygon,
-    spixel_draw_regular_star,
+    spixel_ellipse,
+    spixel_line,
+    spixel_polyline,
+    spixel_rectangle,
+    spixel_regular_polygon,
+    spixel_regular_star,
     spixel_flood_fill,
     spixel_get,
     spixel_plot,
@@ -98,12 +98,6 @@ class Screen(Colorize, frameBuffer):
     # ------------------------------------------------------------------
     # half block drawing
     # ------------------------------------------------------------------
-    def pixel(self, x: int, y: int, color):
-        return pixel_plot(self, x, y, color)
-
-    def plot(self, x: int, y: int, color):
-        return pixel_plot(self, x, y, color)
-
     def pixel_plot(self, x: int, y: int, color):
         return pixel_plot(self, x, y, color)
 
@@ -113,20 +107,23 @@ class Screen(Colorize, frameBuffer):
     def line(self, x0: int, y0: int, x1: int, y1: int, color):
         return pixel_line(self, x0, y0, x1, y1, color)
 
-    def polyline(self, points, color):
+    def pixel_line(self, x0: int, y0: int, x1: int, y1: int, color):
+        return pixel_line(self, x0, y0, x1, y1, color)
+
+    def pixel_polyline(self, points, color):
         return pixel_polyline(self, points, color)
 
-    def regular_polygon(self, cx: int, cy: int, radius: int,\
+    def pixel_regular_polygon(self, cx: int, cy: int, radius: int,\
                         sides: int, color, rotation: float = 0.0):
-        return pixel_regular_polygon(self, cx, cy, radius,\
+        return pixel_polygon(self, cx, cy, radius,\
                                     sides, color, rotation)
 
-    def regular_star(self, cx: int, cy: int, radius: int,n: int,\
+    def pixel_regular_star(self, cx: int, cy: int, radius: int,n: int,\
                     k: int, color, rotation: float = 0.0):
         return pixel_regular_star(self, cx, cy, radius, n,\
                                  k, color, rotation)
 
-    def flood_fill(self, x_seed, y_seed,fill=None):
+    def pixel_flood_fill(self, x_seed, y_seed,fill=None):
         return pixel_flood_fill(self, x_seed, y_seed, fill)
 
     def pixel_rectangle(self,x1, y1, x2, y2,fill=None):
@@ -145,29 +142,83 @@ class Screen(Colorize, frameBuffer):
         return spixel_get(self, x, y,mode)
 
     def spixel_line(self, x0: int, y0: int, x1: int, y1: int, state, mode='octant'):
-        return spixel_draw_line(self, x0, y0, x1, y1, state, mode=mode)
+        return spixel_line(self, x0, y0, x1, y1, state, mode=mode)
 
     def spixel_polyline(self, points, state):
-        return spixel_draw_polyline(self, points, state, mode='octant')
+        return spixel_polyline(self, points, state, mode='octant')
 
     def spixel_regular_polygon(self, cx: int, cy: int, radius: int,\
                         sides: int, state, rotation: float = 0.0, mode='octant'):
-        return spixel_draw_regular_polygon(self, cx, cy, radius,\
+        return spixel_regular_polygon(self, cx, cy, radius,\
                                     sides, state, rotation, mode=mode)
 
     def spixel_regular_star(self, cx: int, cy: int, radius: int,n: int,\
                     k: int, state, rotation: float = 0.0, mode='octant'):
-        return spixel_draw_regular_star(self, cx, cy, radius, n,\
+        return spixel_regular_star(self, cx, cy, radius, n,\
                                  k, state, rotation, mode=mode)
 
     def spixel_flood_fill(self, x_seed, y_seed,state, mode='octant'):
         return spixel_flood_fill(self, x_seed, y_seed, state, mode=mode)
 
     def spixel_rectangle(self,x1, y1, x2, y2,state, mode='octant'):
-        return spixel_draw_rectangle(self,x1, y1, x2, y2,state, mode=mode)
+        return spixel_rectangle(self,x1, y1, x2, y2,state, mode=mode)
 
     def spixel_ellipse(self, cx, cy, rx, ry, state, mode='octant'):
-        return spixel_draw_ellipse(self, cx, cy, rx, ry, state, mode=mode)
+        return spixel_ellipse(self, cx, cy, rx, ry, state, mode=mode)
+
+    # ------------------------------------------------------------------
+    # block drawing
+    # ------------------------------------------------------------------
+    def plot(self, x: int, y: int, state, mode=None):
+        if mode is None:
+            return pixel_plot(self, x, y, state)
+        return spixel_plot(self, x, y, state,mode)
+
+    def get(self, x: int, y: int, mode=None):
+        if mode is None:
+            return pixel_get(self, x, y)
+        return spixel_get(self, x, y,mode)
+
+    def line(self, x0: int, y0: int, x1: int, y1: int, state, mode=None):
+        if mode is None:
+            return pixel_line(self, x0, y0, x1, y1, state)
+        return spixel_line(self, x0, y0, x1, y1, state, mode=mode)
+
+    def polyline(self, points, state, mode=None):
+        if mode is None:
+            return pixel_polyline(self, points, state)
+        return spixel_polyline(self, points, state, mode=None)
+
+    def regular_polygon(self, cx: int, cy: int, radius: int,\
+                        sides: int, state, rotation: float = 0.0, mode=None):
+        if mode is None:
+            return pixel_regular_polygon(self, cx, cy, radius,\
+                                    sides, state, rotation)
+        return spixel_regular_polygon(self, cx, cy, radius,\
+                                    sides, state, rotation, mode=mode)
+
+    def regular_star(self, cx: int, cy: int, radius: int,n: int,\
+                    k: int, state, rotation: float = 0.0, mode=None):
+        if mode is None:
+            return pixel_regular_star(self, cx, cy, radius, n,\
+                                 k, state, rotation)
+        return spixel_regular_star(self, cx, cy, radius, n,\
+                                 k, state, rotation, mode=mode)
+
+    def flood_fill(self, x_seed, y_seed,state, mode=None):
+        if mode is None:
+            return pixel_flood_fill(self, x_seed, y_seed, state)
+        return spixel_flood_fill(self, x_seed, y_seed, state, mode=mode)
+
+    def rectangle(self,x1, y1, x2, y2,state, mode=None):
+        if mode is None:
+            return pixel_rectangle(self,x1, y1, x2, y2,state)
+        return spixel_rectangle(self,x1, y1, x2, y2,state, mode=mode)
+
+    def ellipse(self, cx, cy, rx, ry, state, mode=None):
+        if mode is None:
+            return pixel_ellipse(self, cx, cy, rx, ry, state)
+        return spixel_ellipse(self, cx, cy, rx, ry, state, mode=mode)
 
     # ------------------------------------------------------------------
     # full-block drawing
