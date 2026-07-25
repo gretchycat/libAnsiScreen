@@ -58,8 +58,6 @@ class frameBuffer():
         new_class_name = f"{cls.__name__}ed{base_class.__name__}"
         ExtendedClass = type(new_class_name, (cls, base_class), {})
         instance.__class__ = ExtendedClass
-        if hasattr(cls, '__init__'):
-            cls.__init__(instance, width=instance.width)
         return instance
 
     # ------------------------------------------------------------------
@@ -69,7 +67,7 @@ class frameBuffer():
         """Ensure row y exists and is allocated to the current width."""
         while y >= len(self.rows):
             self.rows.append([Cell(
-                char=' ',
+                char=None,
                 fg=self.current_fg,
                 bg=self.current_bg,
                 attrs=self.current_attrs,
@@ -82,7 +80,7 @@ class frameBuffer():
         if current_len < target_width:
             # Pad missing cells up to target_width
             row.extend(Cell(
-                char=' ',
+                char=None,
                 fg=self.current_fg,
                 bg=self.current_bg,
                 attrs=self.current_attrs,

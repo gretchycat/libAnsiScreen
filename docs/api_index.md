@@ -1,27 +1,37 @@
 # API Reference Index
 
-This index provides a complete navigation map to all classes and modules within the `libAnsiScreen` library.
+This index provides a complete sitemap for all modules, classes, and documentation guides within `libAnsiScreen`.
+
+---
 
 ## Core Classes
-- [Screen](./classes/Screen.md) - The central screen buffer and orchestrator.
-- [Cell](./classes/Cell.md) - The atomic unit of terminal state.
-- [Cursor](./classes/Cursor.md) - Logical write position tracker.
+- [Screen](./classes/Screen.md) - Primary high-level virtual terminal screen orchestrator.
+- [Cell](./classes/Cell.md) - Atomic unit of terminal grid state (character, colors, attributes).
+- [Cursor](./classes/Cursor.md) - Logical write position tracker (`x`, `y`) and position save/restore state.
 
-## Color Management
-- [Color](./classes/Color.md) - Immutable RGB(A) color representation.
-- [Palette](./classes/Palette.md) - Indexed color mappings and factory functions.
+---
 
-## Rendering and Parsing
-- [ANSIEmitter](./classes/ANSIEmitter.md) - State-aware ANSI rendering engine.
-- [ANSIParser](./classes/ANSIParser.md) - Streaming ANSI data processor.
-- [Box](./classes/Box.md) - Rectangular region definition.
-- [AnsiColorState](./classes/AnsiColorState.md) - Internal ANSI color representation.
-- [TerminalState](./classes/TerminalState.md) - Internal terminal graphics state.
+## Color & Palette Management
+- [Color](./classes/Color.md) - Immutable RGB(A) color representation, conversions, and blending.
+- [Palette](./classes/Palette.md) - Indexed color lookups and ANSI palette factories.
 
-## Screen Operations
-- [Screen Operations](./screen_ops.md) - High-level utility functions for clipping, geometry, and more.
+---
 
-## Documentation Overview
-- [Library Purpose](./purpose.md) - Goals, scope, and philosophy.
-- [Library Architecture](./architecture.md) - Conceptual design and data structures.
-- [Usage Guide](./usage.md) - Runnable code recipes and examples.
+## Rendering & Parsing
+- [ANSIEmitter](./classes/ANSIEmitter.md) - State-aware differential ANSI rendering engine.
+- [ANSIParser](./classes/ANSIParser.md) - Streaming ANSI escape sequence processor.
+- [Box](./classes/Box.md) - Rectangular region bounding box `(x, y, w, h)`.
+- [AnsiColorState](./classes/AnsiColorState.md) - Internal ANSI color representation tracking.
+- [TerminalState](./classes/TerminalState.md) - Internal terminal graphics state tracking.
+
+---
+
+## Screen Operations (`screen_ops`)
+- [Screen Operations](./screen_ops.md) - High-level utilities for clipping (`clip`), gradients (`colorize`), half-block pixels (`pixel`), subpixel graphics (`spixel`), and full-block primitives (`prim`).
+
+---
+
+## Overview & User Guides
+- [Library Purpose](./purpose.md) - Motivation, design goals, and philosophy.
+- [Library Architecture](./architecture.md) - Conceptual design, data structures, and pipeline.
+- [Usage Guide](./usage.md) - Tested code recipes and runnable examples.

@@ -38,7 +38,7 @@ def lower_right_origin(screen: Screen):
     return x, y
 
 def test_clip_pipeline():
-    src_path = Path(sys.argv[1])
+    src_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("thetix.ans")
     assert src_path.exists(), "Missing input ANSI file"
 
     # Load original screen

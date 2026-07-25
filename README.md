@@ -115,13 +115,24 @@ with correctness and long-term reuse in mind. The public API is not yet frozen.
 
 ## Usage & API
 
-*Coming soon.*
+```python
+from libansiscreen.screen import Screen
+from libansiscreen.color.rgb import Color
 
-This section will document:
-- the `Screen` and `Cell` APIs
-- ANSI import and export interfaces
-- rendering strategies and cost models
-- image and palette integration
+# Create screen buffer
+screen = Screen(width=40)
+screen.set_foreground(Color(0, 255, 128))
+screen.put_text("Hello, libAnsiScreen!")
+
+# Render to ANSI escape sequence string
+print(screen.emit())
+```
+
+For detailed guides and reference:
+- [API Index](file:///home/gretchen/Projects/libAnsiScreen/docs/api_index.md)
+- [Screen Class Documentation](file:///home/gretchen/Projects/libAnsiScreen/docs/classes/Screen.md)
+- [Usage Guide & Recipes](file:///home/gretchen/Projects/libAnsiScreen/docs/usage.md)
+- [Screen Operations Guide](file:///home/gretchen/Projects/libAnsiScreen/docs/screen_ops.md)
 
 ---
 
