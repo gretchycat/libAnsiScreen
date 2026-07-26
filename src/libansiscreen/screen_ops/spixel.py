@@ -75,8 +75,10 @@ for mask in range(256):
     OCTANT_CHARS[mask] = QUADRANT_CHARS[quad_idx]
 
 OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
-# Also index Unicode 16.0 raw octant codepoints for reverse lookup
+# Index U+1CD00 and U+1CC00 codepoint ranges for full reverse lookup compatibility
 for mask in range(1, 255):
+    OCTANT_MAP[chr(0x1CD00 + mask - 1)] = mask
+    OCTANT_MAP[chr(0x1CD00 + mask)] = mask
     OCTANT_MAP[chr(0x1CC00 + mask)] = mask
 
 # ==============================================================================
