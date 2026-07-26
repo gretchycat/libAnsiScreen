@@ -114,3 +114,51 @@ def test_image_emitter_protocol_dispatch():
     emitter.force_graphics_protocol("block")
     out_block = emitter.emit(screen)
     assert "▀" in out_block
+
+
+def test_thetis_image_file_rendering():
+    import os
+    from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+
+    thetis_path = os.path.join(os.path.dirname(__file__), "thetis.jpg")
+    assert os.path.exists(thetis_path)
+
+    screen = Screen(width=40, height=20)
+    img_id = screen.put_image(x=2, y=2, image=thetis_path, width_cells=20, height_cells=10)
+    assert img_id == 1
+
+    emitter = ANSIEmitter()
+
+    # 1. Kitty Protocol Emission
+    emitter.force_graphics_protocol("kitty")
+    out_kitty = emitter.emit(screen)
+    assert "\x1b_G" in out_kitty
+    assert "a=T" in out_kitty
+
+    # 2. Sixel Protocol Emission
+    emitter.force_graphics_protocol("sixel")
+    out_sixel = emitter.emit(screen)
+    assert "\x1bPq" in out_sixel
+    assert "\x1b\\" in out_sixel
+
+    # 3. iTerm2 Protocol Emission
+    emitter.force_graphics_protocol("iterm2")
+    out_iterm2 = emitter.emit(screen)
+    assert "\x1b]1337;File=" in out_iterm2
+
+    # 4. Block Fallback Emission
+    emitter.force_graphics_protocol("block")
+    out_block = emitter.emit(screen)
+    assert "▀" in out_block
+
+    # Save outputs to tests/out/ for inspection
+    out_dir = os.path.join(os.path.dirname(__file__), "out")
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "thetis.kitty.ans"), "w", encoding="utf-8") as f:
+        f.write(out_kitty)
+    with open(os.path.join(out_dir, "thetis.sixel.ans"), "w", encoding="utf-8") as f:
+        f.write(out_sixel)
+    with open(os.path.join(out_dir, "thetis.iterm2.ans"), "w", encoding="utf-8") as f:
+        f.write(out_iterm2)
+    with open(os.path.join(out_dir, "thetis.block.ans"), "w", encoding="utf-8") as f:
+        f.write(out_block)
