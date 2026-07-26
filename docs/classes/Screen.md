@@ -170,13 +170,19 @@ Clears from cursor position to bottom of screen.
 ### 5. Clip & Clipboard Operations
 
 #### `copy(box: Optional[Tuple[int, int, int, int]] = None) -> frameBuffer`
-Copies a rectangular region into a new `frameBuffer`.
+Copies a rectangular region into a new `frameBuffer` using binary buffer memory slicing. Preserves all character, color, attribute, and `None` states.
 
 #### `clear(box: Optional[Tuple[int, int, int, int]] = None) -> None`
 Clears cells in a specified region or full screen.
 
 #### `paste(src: frameBuffer, *, box: Optional[Tuple[int, int, int, int]] = None, transparent_char: Optional[Set[str]] = None, transparent_fg: bool = False, transparent_bg: bool = False, transparent_attrs: bool = False) -> None`
-Pastes `src` framebuffer at target region `box=(x, y, w, h)` with transparency rules.
+Pastes `src` framebuffer at target region `box=(x, y, w, h)` with transparency and non-overwriting rules:
+- **`src_cell.char is None` or `char in transparent_char`:** Destination character (`dst_cell.char`) is **preserved** (not overwritten).
+- **`src_cell.fg is None` or `transparent_fg=True`:** Destination foreground color (`dst_cell.fg`) is **preserved** (not overwritten).
+- **`src_cell.bg is None` or `transparent_bg=True`:** Destination background color (`dst_cell.bg`) is **preserved** (not overwritten).
+- **`transparent_attrs=True`:** Destination text formatting attributes (`dst_cell.attrs`) are **preserved**.
+
+For a detailed non-overwriting matrix and code recipes, see [Screen Operations Documentation](../screen_ops.md).
 
 #### `cut(box: Optional[Tuple[int, int, int, int]] = None) -> frameBuffer`
 Copies region to a new `frameBuffer` and clears source region.
