@@ -151,12 +151,15 @@ class ANSIEmitter():
                         if cell.tile_x == 0 and cell.tile_y == 0:
                             out[-1] += f"\x1b[{row+1};{col+1}H"
                             out[-1] += encode_image(img_obj, protocol=proto, width_cells=w_cells, height_cells=h_cells)
-                        ch = ""
+                        ch = " "
                     else:
                         ch = render_cell_block_fallback(img_obj, cell.tile_x, cell.tile_y, w_cells, h_cells)
                 elif self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
-                out[-1] += (ch or "")
+
+                if ch is None:
+                    ch = " "
+                out[-1] += ch
             out[-1] += "\x1b[0m"
             if row < height - 1:
                 out.append("")
