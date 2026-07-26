@@ -41,41 +41,7 @@ QUADRANT_BIT_MASKS = [
     [0x02, 0x08]   # bx = 1 (Right column: rows 0, 1 -> bits 1, 3)
 ]
 
-# Map 8-bit mask (0..255) to Unicode code point
-# 0 maps to space (' '), 255 to full block ('█')
-OCTANT_CHARS = [' '] * 256
-OCTANT_CHARS[0] = ' '
-OCTANT_CHARS[255] = '\u2588'  # Full block
-
-# Standard block element aliases for key 8-bit octant patterns
-OCTANT_OVERLAPS = {
-    0x0F: '\u2580',  # ▀ Upper Half
-    0xF0: '\u2584',  # ▄ Lower Half
-    0x55: '\u258c',  # ▌ Left Half
-    0xAA: '\u2590',  # ▐ Right Half
-    0x05: '\u2598',  # ▘ Top-Left Quadrant
-    0x0A: '\u259d',  # ▝ Top-Right Quadrant
-    0x50: '\u2596',  # ▖ Bottom-Left Quadrant
-    0xA0: '\u2597',  # ▗ Bottom-Right Quadrant
-}
-
-for mask in range(1, 255):
-    if mask in OCTANT_OVERLAPS:
-        OCTANT_CHARS[mask] = OCTANT_OVERLAPS[mask]
-    else:
-        # Unicode 16.0 Symbols for Legacy Computing Supplement: U+1CC00 + mask
-        OCTANT_CHARS[mask] = chr(0x1CC00 + mask)
-
-OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
-# Also index Unicode 16.0 raw octant codepoints for overlapping masks
-for mask in range(1, 255):
-    OCTANT_MAP[chr(0x1CC00 + mask)] = mask
-
 # 4-bit bitmask [TR, TL, BR, BL] -> Quadrant Character Map (16 total states)
-# Bit 0 (0x1): Top-Left     (x=0, y=0)
-# Bit 1 (0x2): Top-Right    (x=1, y=0)
-# Bit 2 (0x4): Bottom-Left  (x=0, y=1)
-# Bit 3 (0x8): Bottom-Right (x=1, y=1)
 QUADRANT_CHARS = [
     ' ',       # 0b0000 (0)  - Empty space
     '\u2598',  # 0b0001 (1)  - ▘ Top-Left
@@ -97,6 +63,21 @@ QUADRANT_CHARS = [
 
 # Fast character -> 4-bit bitmask reverse lookup
 QUADRANT_MAP = {char: mask for mask, char in enumerate(QUADRANT_CHARS)}
+
+# Map 8-bit octant mask (0..255) to universally supported block/quadrant characters
+OCTANT_CHARS = [' '] * 256
+for mask in range(256):
+    q_tl = 1 if (mask & 0x05) else 0
+    q_tr = 1 if (mask & 0x0A) else 0
+    q_bl = 1 if (mask & 0x50) else 0
+    q_br = 1 if (mask & 0xA0) else 0
+    quad_idx = q_tl | (q_tr << 1) | (q_bl << 2) | (q_br << 3)
+    OCTANT_CHARS[mask] = QUADRANT_CHARS[quad_idx]
+
+OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
+# Also index Unicode 16.0 raw octant codepoints for reverse lookup
+for mask in range(1, 255):
+    OCTANT_MAP[chr(0x1CC00 + mask)] = mask
 
 # ==============================================================================
 # HELPERS & PLOTTING FUNCTIONS
