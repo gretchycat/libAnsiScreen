@@ -14,6 +14,7 @@ from .binary_cell import (
     CODEPOINT_MASK,
 )
 from .image import ImageRegistry, ImageEntry
+from .capabilities import detect_terminal_capabilities, TerminalCapabilities
 
 # ----------------------------------------------------------------------
 # Palette-derived defaults (single source of truth)
@@ -206,7 +207,40 @@ class frameBuffer:
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
 
+        # Terminal Capabilities & Protocol Controls
+        self.capabilities: TerminalCapabilities = detect_terminal_capabilities()
+
         self._ensure_row(height - 1)
+
+    # ------------------------------------------------------------------
+    # Terminal Capabilities & Protocol Controls
+    # ------------------------------------------------------------------
+    def detect_capabilities(self, env: Optional[Dict[str, str]] = None) -> TerminalCapabilities:
+        """
+        Detects terminal color depth and graphics capabilities from environment variables.
+        """
+        self.capabilities = detect_terminal_capabilities(env)
+        return self.capabilities
+
+    def force_color_depth(self, mode: Optional[str]) -> None:
+        """
+        Force/override active color depth ('truecolor', 'ansi256', 'ansi16', or None).
+        """
+        self.capabilities.override_color_depth = mode
+
+    def force_graphics_protocol(self, protocol: Optional[str]) -> None:
+        """
+        Force/override active graphics protocol ('kitty', 'sixel', 'iterm2', 'block', or None).
+        """
+        self.capabilities.override_graphics_protocol = protocol
+
+    def get_color_depth(self) -> str:
+        """Returns active color depth ('truecolor', 'ansi256', or 'ansi16')."""
+        return self.capabilities.active_color_depth
+
+    def get_graphics_protocol(self) -> str:
+        """Returns active graphics protocol ('kitty', 'sixel', 'iterm2', or 'block')."""
+        return self.capabilities.active_graphics_protocol
 
     # ------------------------------------------------------------------
     # Properties & Backward Compatibility Adapters
