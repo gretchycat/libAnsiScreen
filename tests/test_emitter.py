@@ -22,6 +22,19 @@ def test_emitter_basic_rendering():
     save_output(screen, "emitter_basic.ans", emitter=emitter)
 
 
+def test_emitter_full_row_height_coverage():
+    screen = Screen(width=10, height=5)
+    screen.put_text("0\n1\n2\n3\n4")
+
+    emitter = ANSIEmitter()
+    ansi_str = emitter.emit(screen)
+    lines = ansi_str.split("\n")
+
+    assert len(lines) == 5
+    assert "0" in lines[0]
+    assert "4" in lines[4]
+
+
 def test_emitter_output_modes_and_palettes():
     screen = Screen(width=40)
     screen.set_foreground(Color(200, 100, 50))

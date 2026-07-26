@@ -92,86 +92,86 @@ class ANSIEmitter():
             bg=AnsiColorState("ansi16", (0,0)),
             attrs=0,
         )
-        for row in range(start_y, height-1):
+        for row in range(start_y, height):
             if raw:
-                out[-1]+=f"\x1b[{row+1};{1}H"
-            for col in range(start_x,width):
+                out[-1] += f"\x1b[{row+1};{1}H"
+            for col in range(start_x, width):
                 cell = fb.get_cell(col, row) or Cell()
                 desired = self._compile_cell(prev, cell)
                 seq, prev = self._emit_transition(prev, desired)
                 if seq:
-                    out[-1]+=seq
+                    out[-1] += seq
                 ch = cell.char
                 if self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
-                out[-1]+=(ch or ' ')
-            out[-1]+=("\x1b[0m")
-            if row<height:
-                out.append('')
+                out[-1] += (ch or " ")
+            out[-1] += "\x1b[0m"
+            if row < height - 1:
+                out.append("")
             prev = TerminalState(
-                fg=AnsiColorState("ansi16", (7,0)),
-                bg=AnsiColorState("ansi16", (0,0)),
+                fg=AnsiColorState("ansi16", (7, 0)),
+                bg=AnsiColorState("ansi16", (0, 0)),
                 attrs=0,
             )
         if raw:
-            return"".join(out)
+            return "".join(out)
         return "\n".join(out)
 
-    def emit_diff(self, fb: frameBuffer, pfb:frameBuffer, box: Optional[Box] = None, raw=False) -> str:  #FIXME
+    def emit_diff(self, fb: frameBuffer, pfb: frameBuffer, box: Optional[Box] = None, raw=False) -> str:  # FIXME
         if pfb:
-            if pfb.width!=fb.width or pfb.height!=fb.height:
-                pfb=None
-        out = []
+            if pfb.width != fb.width or pfb.height != fb.height:
+                pfb = None
+        out = [""]
         if box is None:
             start_x, start_y = 0, 0
             width, height = fb.width, fb.height
         else:
-            start_x, start_y = max(0,box.x), max(0,box.y)
-            width, height = min(box.width,fb.width), min(box.height,fb.height)
+            start_x, start_y = max(0, box.x), max(0, box.y)
+            width, height = min(box.width, fb.width), min(box.height, fb.height)
         # hard reset + home
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
         prev = TerminalState(
-            fg=AnsiColorState("ansi16", (7,0)),
-            bg=AnsiColorState("ansi16", (0,0)),
+            fg=AnsiColorState("ansi16", (7, 0)),
+            bg=AnsiColorState("ansi16", (0, 0)),
             attrs=0,
         )
-        for row in range(start_y, height-1):
-            set_y=None
+        for row in range(start_y, height):
+            set_y = None
             if raw or pfb is not None:
-                set_y=f"\x1b[{row+1};{1}H"
-            dx=0
-            for col in range(start_x,width):
-                if pfb==None or \
-                        (fb.get_cell(col, row) != \
-                        pfb.get_cell(col, row)):
+                set_y = f"\x1b[{row+1};{1}H"
+            dx = 0
+            for col in range(start_x, width):
+                if pfb is None or (fb.get_cell(col, row) != pfb.get_cell(col, row)):
                     if set_y:
-                        out[-1]+=set_y
-                    set_y=None
-                    cell = fb.get_cell(col,row) or Cell()
+                        out[-1] += set_y
+                    set_y = None
+                    cell = fb.get_cell(col, row) or Cell()
                     desired = self._compile_cell(prev, cell)
                     seq, prev = self._emit_transition(prev, desired)
-                    if dx==1: out[-1]+=f'\x1b[C'
-                    if dx>1: out[-1]+=f'\x1b[{dx}C'
-                    dx=0
-                    if seq!='':
-                        out[-1]+=seq
+                    if dx == 1:
+                        out[-1] += "\x1b[C"
+                    if dx > 1:
+                        out[-1] += f"\x1b[{dx}C"
+                    dx = 0
+                    if seq != "":
+                        out[-1] += seq
                     ch = cell.char
                     if self._dos_colors_match(prev.fg, prev.bg):
                         ch = "█"
-                    out[-1]+=(ch or ' ')
+                    out[-1] += (ch or " ")
                 else:
-                    dx+=1
-            out[-1]+=("\x1b[0m")
-            if row<height:
-                out.append('')
+                    dx += 1
+            out[-1] += "\x1b[0m"
+            if row < height - 1:
+                out.append("")
             prev = TerminalState(
-                fg=AnsiColorState("ansi16", (7,0)),
-                bg=AnsiColorState("ansi16", (0,0)),
+                fg=AnsiColorState("ansi16", (7, 0)),
+                bg=AnsiColorState("ansi16", (0, 0)),
                 attrs=0,
             )
         if raw:
-            return"".join(out)
+            return "".join(out)
         return "\n".join(out)
 
         # -------------------------
