@@ -87,3 +87,33 @@ def test_clip_with_sample_ans_file():
 
     screen.clear(box_region)
     save_output(screen, "test_clip_cleared_thetis.ans")
+
+
+def test_clip_binary_performance():
+    # Large 200x100 screen buffer
+    src = Screen(width=200, height=100)
+    src.set_foreground(Color(100, 200, 50))
+    src.set_background(Color(20, 30, 40))
+    src.put_text("BINARY_CELL_" * 1500)
+
+    # 1. Full binary copy
+    copied = src.copy()
+    assert copied.width == 200
+    assert copied.height == 100
+    assert copied.buffer == src.buffer
+
+    # 2. Fast opaque binary paste onto destination
+    dst = Screen(width=200, height=100)
+    dst.paste(copied)
+    assert dst.buffer == src.buffer
+
+    # 3. Binary slice clear
+    dst.clear((50, 20, 100, 50))
+    assert dst.get_cell(50, 20).char is None
+
+    # 4. Fast binary tile
+    tile_src = Screen(width=10, height=5)
+    tile_src.put_text("TILE" * 10)
+    dst.tile(tile_src)
+    assert dst.get_cell(0, 0).char == "T"
+
