@@ -70,11 +70,13 @@ class ANSIEmitter():
         palette=None,                 # if set, quantize to this palette (index space)
         dos_mode: bool = False,       # CP437-ish / DOS SGR semantics
         ice_mode: bool = False,       # in DOS mode, use blink bit for bright background
+        encoding: str = "utf-8",      # output codepage encoding (e.g. "cp437", "utf-8", "latin-1")
         capabilities: Optional[TerminalCapabilities] = None,
     ):
         self.palette = palette
         self.dos_mode = dos_mode
         self.ice_mode = ice_mode
+        self.encoding = encoding
         self.capabilities: TerminalCapabilities = capabilities or detect_terminal_capabilities()
 
     # -------------------------
@@ -111,7 +113,7 @@ class ANSIEmitter():
     # Public API
     # -------------------------
 
-    def emit(self, fb: frameBuffer, box: Optional[Box] = None, raw=False) -> str:
+    def emit(self, fb: frameBuffer, box: Optional[Box] = None, raw=False, return_bytes: bool = False) -> Union[str, bytes]:
         out = []
         if box is None:
             start_x, start_y = 0, 0
@@ -123,8 +125,8 @@ class ANSIEmitter():
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0
         prev = TerminalState(
-            fg=AnsiColorState("ansi16", (7,0)),
-            bg=AnsiColorState("ansi16", (0,0)),
+            fg=AnsiColorState("ansi16", (7, 0)),
+            bg=AnsiColorState("ansi16", (0, 0)),
             attrs=0,
         )
         for row in range(start_y, height):
@@ -150,9 +152,10 @@ class ANSIEmitter():
                 bg=AnsiColorState("ansi16", (0, 0)),
                 attrs=0,
             )
-        if raw:
-            return "".join(out)
-        return "\n".join(out)
+        res_str = "".join(out) if raw else "\n".join(out)
+        if return_bytes or self.encoding.lower() not in ("utf-8", "utf8"):
+            return res_str.encode(self.encoding, errors="replace")
+        return res_str
 
     def emit_diff(self, fb: frameBuffer, pfb: frameBuffer, box: Optional[Box] = None, raw=False) -> str:  # FIXME
         if pfb:

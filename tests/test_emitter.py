@@ -62,6 +62,25 @@ def test_emitter_output_modes_and_palettes():
     save_output(screen, "emitter_out_mode.dos_ice.ans", emitter=em_ice)
 
 
+def test_emitter_dos_ice_and_cp437_codepage():
+    screen = Screen(width=20)
+    screen.put_text("┌─┐\n│█│\n└─┘")
+
+    # 1. DOS + ICE mode
+    em_dos_ice = ANSIEmitter(dos_mode=True, ice_mode=True)
+    assert em_dos_ice.dos_mode is True
+    assert em_dos_ice.ice_mode is True
+
+    # 2. CP437 codepage bytes encoding
+    em_cp437 = ANSIEmitter(dos_mode=True, encoding="cp437")
+    cp437_bytes = em_cp437.emit(screen, return_bytes=True)
+
+    assert isinstance(cp437_bytes, bytes)
+    assert b"\xda" in cp437_bytes  # CP437 byte for '┌'
+    assert b"\xc4" in cp437_bytes  # CP437 byte for '─'
+    assert b"\xbf" in cp437_bytes  # CP437 byte for '┐'
+
+
 def test_emitter_box_subregion_and_raw():
     screen = Screen(width=20, height=10)
     screen.put_text("Line 0\nLine 1\nLine 2\nLine 3")
