@@ -55,3 +55,29 @@ def test_image_emitter_placeholder():
 
     rendered = screen.emit()
     assert "🖼" in rendered
+
+
+def test_put_cell_image_and_clip_operations():
+    src = Screen(width=10, height=5)
+    mock_pil_img = {"format": "PNG", "bytes": b"\x89PNG\r\n\x1a\n"}
+
+    # 1. Direct put_cell with image kwarg
+    src.put_cell(0, 0, image=mock_pil_img)
+    cell = src.get_cell(0, 0)
+
+    assert cell.is_image is True
+    assert isinstance(cell.image, ImageEntry)
+    assert cell.image.image == mock_pil_img
+
+    # 2. Copy image region
+    copied_fb = src.copy((0, 0, 5, 2))
+    assert copied_fb.get_cell(0, 0).is_image is True
+
+    # 3. Paste image region onto destination
+    dst = Screen(width=20, height=10)
+    dst.paste(copied_fb, box=(5, 5, 5, 2))
+
+    dst_cell = dst.get_cell(5, 5)
+    assert dst_cell.is_image is True
+    assert isinstance(dst_cell.image, ImageEntry)
+    assert dst_cell.image.image == mock_pil_img

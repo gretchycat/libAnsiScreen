@@ -310,6 +310,10 @@ class frameBuffer:
         if x < 0 or x >= self.width:
             return
         self._ensure_row(y)
+        if cell is not None and cell.image is not None and not isinstance(cell.image, (int, ImageEntry)):
+            img_id = self.image_registry.register(cell.image)
+            cell = cell.copy()
+            cell.image = self.image_registry.get(img_id)
         pack_cell(self.buffer, self._cell_offset(x, y), cell)
 
     def put_cell(
@@ -321,6 +325,7 @@ class frameBuffer:
         fg: Optional[Color] = None,
         bg: Optional[Color] = None,
         attrs: int = 0,
+        image: Optional[Any] = None,
     ) -> None:
         self.set_cell(
             x,
@@ -330,6 +335,7 @@ class frameBuffer:
                 fg=fg,
                 bg=bg,
                 attrs=attrs,
+                image=image,
             ),
         )
 

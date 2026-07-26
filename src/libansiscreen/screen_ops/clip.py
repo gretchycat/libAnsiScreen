@@ -67,6 +67,7 @@ def copy(fb: frameBuffer, box: Optional[Box] = None) -> frameBuffer:
         raise ValueError("Box height must be positive")
 
     new_fb = frameBuffer(w, height=h)
+    new_fb.image_registry = copy_module.copy(fb.image_registry)
     if x0 >= fb.width or y0 >= fb.height:
         return new_fb
 
@@ -129,6 +130,11 @@ def paste(
 
     if max_w <= 0 or max_h <= 0:
         return
+
+    # Sync image registry entries from src to dst
+    for img_id, entry in src.image_registry._images.items():
+        if dst.image_registry.get(img_id) is None:
+            dst.image_registry._images[img_id] = entry
 
     # Selective field copy with transparency rules directly in binary buffer
     transparent_cps = {ord(c) for c in transparent_char if len(c) == 1}
