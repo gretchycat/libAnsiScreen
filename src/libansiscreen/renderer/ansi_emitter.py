@@ -102,7 +102,9 @@ class ANSIEmitter():
                 if seq:
                     out[-1] += seq
                 ch = cell.char
-                if self._dos_colors_match(prev.fg, prev.bg):
+                if cell.is_image:
+                    ch = "🖼"
+                elif self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
                 out[-1] += (ch or " ")
             out[-1] += "\x1b[0m"
@@ -157,7 +159,9 @@ class ANSIEmitter():
                     if seq != "":
                         out[-1] += seq
                     ch = cell.char
-                    if self._dos_colors_match(prev.fg, prev.bg):
+                    if cell.is_image:
+                        ch = "🖼"
+                    elif self._dos_colors_match(prev.fg, prev.bg):
                         ch = "█"
                     out[-1] += (ch or " ")
                 else:

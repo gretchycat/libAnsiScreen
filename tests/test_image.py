@@ -41,3 +41,17 @@ def test_screen_put_image():
     assert (cp & IMAGE_FLAG) != 0
     assert (cp & ~IMAGE_FLAG) == img_id
     assert screen.image_registry.get(img_id).image == mock_image
+
+    # High-level Cell property resolution
+    assert cell.is_image is True
+    assert isinstance(cell.image, ImageEntry)
+    assert cell.image.image == mock_image
+
+
+def test_image_emitter_placeholder():
+    screen = Screen(width=10, height=2)
+    mock_img = "SAMPLE_PIL_IMAGE"
+    screen.put_image(x=2, y=0, image=mock_img, width_cells=3, height_cells=1)
+
+    rendered = screen.emit()
+    assert "🖼" in rendered

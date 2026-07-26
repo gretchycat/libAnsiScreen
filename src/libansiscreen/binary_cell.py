@@ -2,6 +2,7 @@ import struct
 from typing import Optional
 from .cell import Cell
 from .color.rgb import Color
+from .image import ImageEntry
 
 CELL_SIZE = 16
 
@@ -69,7 +70,14 @@ def pack_cell(buffer: bytearray, offset: int, cell: Optional[Cell]) -> None:
 
     # Determine character codepoint or image id
     codepoint = 0
-    if isinstance(cell.char, str) and len(cell.char) > 0:
+    if cell.image is not None:
+        if isinstance(cell.image, ImageEntry):
+            codepoint = IMAGE_FLAG | cell.image.image_id
+        elif isinstance(cell.image, int):
+            codepoint = IMAGE_FLAG | cell.image
+    elif isinstance(cell.char, ImageEntry):
+        codepoint = IMAGE_FLAG | cell.char.image_id
+    elif isinstance(cell.char, str) and len(cell.char) > 0:
         codepoint = ord(cell.char[0])
 
     fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
@@ -119,10 +127,14 @@ def unpack_cell(buffer: bytearray, offset: int) -> Optional[Cell]:
         return None
 
     char = None
-    if cp != 0 and not (cp & IMAGE_FLAG):
-        char = chr(cp)
+    image_id = None
+    if cp != 0:
+        if cp & IMAGE_FLAG:
+            image_id = cp & CODEPOINT_MASK
+        else:
+            char = chr(cp)
 
     fg_color = Color(fr, fg, fb) if (ff & FLAG_COLOR_SET) else None
     bg_color = Color(br, bg, bb) if (bf & FLAG_COLOR_SET) else None
 
-    return Cell(char=char, fg=fg_color, bg=bg_color, attrs=attrs)
+    return Cell(char=char, fg=fg_color, bg=bg_color, attrs=attrs, image=image_id)

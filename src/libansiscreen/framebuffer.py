@@ -301,7 +301,10 @@ class frameBuffer:
             return None
         if x < 0 or x >= self.width:
             return None
-        return unpack_cell(self.buffer, self._cell_offset(x, y))
+        cell = unpack_cell(self.buffer, self._cell_offset(x, y))
+        if cell is not None and isinstance(cell.image, int):
+            cell.image = self.image_registry.get(cell.image)
+        return cell
 
     def set_cell(self, x: int, y: int, cell: Optional[Cell]) -> None:
         if x < 0 or x >= self.width:

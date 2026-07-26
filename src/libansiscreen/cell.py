@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union, Any
 
 from .color.rgb import Color
 from .color.palette import create_ansi_16_palette
@@ -36,19 +36,25 @@ class Cell:
     """
     Represents a single terminal cell.
 
+    A cell contains either a character string (char) or an image object/handle (image).
     fg/bg are concrete Colors by default (ANSI reset state).
     Use fg=None or bg=None explicitly to indicate inheritance.
     """
 
-    char: str|None = None
+    char: Optional[Union[str, Any]] = None
     fg: Optional[Color] = DEFAULT_FG
     bg: Optional[Color] = DEFAULT_BG
-    attrs:int = 0
+    attrs: int = 0
+    image: Optional[Any] = None
+
+    @property
+    def is_image(self) -> bool:
+        """Returns True if this cell represents an image tile."""
+        return self.image is not None or (self.char is not None and not isinstance(self.char, str))
 
     # --------------------------------------------------------------
     # Comparison helpers
     # --------------------------------------------------------------
-
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cell):
@@ -58,6 +64,7 @@ class Cell:
             and self.fg == other.fg
             and self.bg == other.bg
             and self.attrs == other.attrs
+            and self.image == other.image
         )
 
     def diff(self, other: "Cell") -> int:
@@ -102,6 +109,7 @@ class Cell:
             fg=self.fg,
             bg=self.bg,
             attrs=self.attrs,
+            image=self.image,
         )
 
     def shift_hsv(self, h: float, s:float,v:float):
