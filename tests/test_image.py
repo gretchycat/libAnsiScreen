@@ -162,3 +162,16 @@ def test_thetis_image_file_rendering():
         f.write(out_iterm2)
     with open(os.path.join(out_dir, "thetis.block.ans"), "w", encoding="utf-8") as f:
         f.write(out_block)
+
+
+def test_thetis_ans_file_roundtrip():
+    import os
+    thetis_ans_path = os.path.join(os.path.dirname(__file__), "thetis.ans")
+    assert os.path.exists(thetis_ans_path)
+
+    screen = Screen(width=80, height=25)
+    with open(thetis_ans_path, "r", encoding="utf-8") as f:
+        screen.feed(f.read())
+
+    assert screen.width == 80
+    assert screen.height >= 25
