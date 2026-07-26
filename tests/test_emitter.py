@@ -81,6 +81,24 @@ def test_emitter_dos_ice_and_cp437_codepage():
     assert b"\xbf" in cp437_bytes  # CP437 byte for '┐'
 
 
+def test_emitter_automatic_color_depth_capability_quantization():
+    screen = Screen(width=10)
+    screen.set_foreground(Color(123, 45, 67))
+    screen.put_text("X")
+
+    emitter = ANSIEmitter()
+
+    # 1. Force ANSI16 mode
+    emitter.force_color_depth("ansi16")
+    res_16 = emitter.emit(screen)
+    assert "\x1b[38;2;" not in res_16  # No truecolor sequence
+
+    # 2. Force ANSI256 mode
+    emitter.force_color_depth("ansi256")
+    res_256 = emitter.emit(screen)
+    assert "\x1b[38;2;" not in res_256  # No truecolor sequence
+
+
 def test_emitter_box_subregion_and_raw():
     screen = Screen(width=20, height=10)
     screen.put_text("Line 0\nLine 1\nLine 2\nLine 3")

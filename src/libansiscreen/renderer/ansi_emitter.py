@@ -259,9 +259,21 @@ class ANSIEmitter():
         # Forced palette: always encode in that palette’s index space (ansi256 SGR form)
         if self.palette is not None:
             idx = quantize_nearest_rgb(color, self.palette)
-            if idx<16:
+            if idx < 16:
                 return AnsiColorState("ansi16", (idx,))
             return AnsiColorState("ansi256", (idx,))
+
+        # Active color depth capability policy
+        depth = self.get_color_depth()
+        if depth == "ansi16":
+            idx = quantize_nearest_rgb(color, ANSI16)
+            return AnsiColorState("ansi16", (idx,))
+        if depth == "ansi256":
+            idx = quantize_nearest_rgb(color, ANSI256)
+            if idx < 16:
+                return AnsiColorState("ansi16", (idx,))
+            return AnsiColorState("ansi256", (idx,))
+
         # Exact-match minimization: prefer ansi16 then ansi256 then truecolor
         idx16 = quantize_exact(color, ANSI16)
         if idx16 is not None:
