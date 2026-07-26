@@ -1,5 +1,5 @@
 import pytest
-from libansiscreen.screen import Screen
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 from libansiscreen.capabilities import detect_terminal_capabilities, TerminalCapabilities
 
 
@@ -31,24 +31,24 @@ def test_terminal_capabilities_environment_detection():
     assert caps_dumb.active_color_depth == "ansi16"
 
 
-def test_screen_capability_methods_and_overrides():
-    screen = Screen(width=20)
+def test_emitter_capability_methods_and_overrides():
+    emitter = ANSIEmitter()
 
     # Detect from custom env
-    screen.detect_capabilities({"KITTY_WINDOW_ID": "12345", "COLORTERM": "truecolor"})
-    assert screen.get_graphics_protocol() == "kitty"
-    assert screen.get_color_depth() == "truecolor"
+    emitter.detect_capabilities({"KITTY_WINDOW_ID": "12345", "COLORTERM": "truecolor"})
+    assert emitter.get_graphics_protocol() == "kitty"
+    assert emitter.get_color_depth() == "truecolor"
 
     # Force overrides
-    screen.force_graphics_protocol("sixel")
-    assert screen.get_graphics_protocol() == "sixel"
+    emitter.force_graphics_protocol("sixel")
+    assert emitter.get_graphics_protocol() == "sixel"
 
-    screen.force_color_depth("ansi256")
-    assert screen.get_color_depth() == "ansi256"
+    emitter.force_color_depth("ansi256")
+    assert emitter.get_color_depth() == "ansi256"
 
     # Clear overrides
-    screen.force_graphics_protocol(None)
-    assert screen.get_graphics_protocol() == "kitty"
+    emitter.force_graphics_protocol(None)
+    assert emitter.get_graphics_protocol() == "kitty"
 
-    screen.force_color_depth(None)
-    assert screen.get_color_depth() == "truecolor"
+    emitter.force_color_depth(None)
+    assert emitter.get_color_depth() == "truecolor"

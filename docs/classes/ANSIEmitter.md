@@ -9,13 +9,22 @@ The emitter supports:
 - **DOS/ICE Modes:** Emulating legacy DOS-style color behavior and high-intensity backgrounds.
 - **Region-Based Rendering:** Emitting only a specific `Box` sub-region of the screen.
 
-## Constructor (`__init__`)
-
 | Parameter | Type | Default | Description |
 |---|---|---|---|
 | `palette` | `Palette` | `None` | If provided, forces all colors to be quantized to this palette. |
 | `dos_mode` | `bool` | `False` | Enables DOS-style SGR semantics. |
 | `ice_mode` | `bool` | `False` | In DOS mode, uses the blink bit for bright backgrounds (Intense Color Environment). |
+| `capabilities` | `TerminalCapabilities` | `None` | Custom terminal capability instance. Defaults to auto-detected environment capabilities. |
+
+## Terminal Capability Detection & Mode Overrides
+
+`ANSIEmitter` manages terminal graphics protocol selection (`"kitty"`, `"sixel"`, `"iterm2"`, `"block"`) and color depth policies:
+
+- `detect_capabilities(env: Optional[Dict[str, str]] = None) -> TerminalCapabilities` – Inspects environment variables (`TERM`, `COLORTERM`, `KITTY_WINDOW_ID`, `TERM_PROGRAM`) to detect supported terminal protocols and color depth.
+- `get_graphics_protocol() -> str` – Returns the active graphics protocol (`"kitty"`, `"sixel"`, `"iterm2"`, or `"block"`).
+- `get_color_depth() -> str` – Returns active color depth (`"truecolor"`, `"ansi256"`, or `"ansi16"`).
+- `force_graphics_protocol(protocol: Optional[str]) -> None` – Forces any graphics protocol (e.g. `emitter.force_graphics_protocol("sixel")`). Pass `None` to restore auto-detected mode.
+- `force_color_depth(mode: Optional[str]) -> None` – Forces any color depth mode (e.g. `emitter.force_color_depth("ansi256")`). Pass `None` to restore auto-detected mode.
 
 ## Methods
 

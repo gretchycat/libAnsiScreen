@@ -53,12 +53,15 @@ class TerminalState:
     attrs: int  # ANSI attrs bitmask as *intended* (after DOS/ICE normalization)
 
 
+from ..capabilities import detect_terminal_capabilities, TerminalCapabilities
+
 class ANSIEmitter():
     """
     Emitter that diffs terminal *intent* in ANSI space.
     - Compile each cell into desired ANSI encoding (attrs + fg + bg)
     - Diff against previous terminal state
     - Emit only what changes (1 SGR max per cell; DOS may force reset + SGR)
+    - Terminal capability detection (Kitty, Sixel, iTerm2, block) & color depth overrides
     """
 
     def __init__(
@@ -67,10 +70,42 @@ class ANSIEmitter():
         palette=None,                 # if set, quantize to this palette (index space)
         dos_mode: bool = False,       # CP437-ish / DOS SGR semantics
         ice_mode: bool = False,       # in DOS mode, use blink bit for bright background
+        capabilities: Optional[TerminalCapabilities] = None,
     ):
         self.palette = palette
         self.dos_mode = dos_mode
         self.ice_mode = ice_mode
+        self.capabilities: TerminalCapabilities = capabilities or detect_terminal_capabilities()
+
+    # -------------------------
+    # Terminal Capabilities & Override Controls
+    # -------------------------
+    def detect_capabilities(self, env: Optional[Dict[str, str]] = None) -> TerminalCapabilities:
+        """
+        Detects terminal color depth and graphics capabilities from environment variables.
+        """
+        self.capabilities = detect_terminal_capabilities(env)
+        return self.capabilities
+
+    def force_color_depth(self, mode: Optional[str]) -> None:
+        """
+        Force/override active color depth ('truecolor', 'ansi256', 'ansi16', or None).
+        """
+        self.capabilities.override_color_depth = mode
+
+    def force_graphics_protocol(self, protocol: Optional[str]) -> None:
+        """
+        Force/override active graphics protocol ('kitty', 'sixel', 'iterm2', 'block', or None).
+        """
+        self.capabilities.override_graphics_protocol = protocol
+
+    def get_color_depth(self) -> str:
+        """Returns active color depth ('truecolor', 'ansi256', or 'ansi16')."""
+        return self.capabilities.active_color_depth
+
+    def get_graphics_protocol(self) -> str:
+        """Returns active graphics protocol ('kitty', 'sixel', 'iterm2', or 'block')."""
+        return self.capabilities.active_graphics_protocol
 
     # -------------------------
     # Public API
