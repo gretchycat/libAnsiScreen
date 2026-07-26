@@ -113,4 +113,4 @@ def test_image_emitter_protocol_dispatch():
     # Block / Fallback Protocol
     emitter.force_graphics_protocol("block")
     out_block = emitter.emit(screen)
-    assert "🖼" in out_block
+    assert "▀" in out_block

@@ -13,7 +13,7 @@ from .binary_cell import (
     IMAGE_FLAG,
     CODEPOINT_MASK,
 )
-from .image import ImageRegistry, ImageEntry
+from .image import ImageRegistry, ImageEntry, load_image
 
 # ----------------------------------------------------------------------
 # Palette-derived defaults (single source of truth)
@@ -350,13 +350,15 @@ class frameBuffer:
         width_cells: int = 1,
         height_cells: int = 1,
         metadata: Optional[Dict[str, Any]] = None,
+        cell_pixel_size: tuple[int, int] = (8, 16),
     ) -> int:
         """
-        Registers an image in the image registry and stamps its Image ID
-        into the cell buffer across the specified grid region.
+        Loads and resizes an image to fit into width_cells x height_cells.
+        Stamps the image into the framebuffer across the specified grid region.
         """
+        loaded_img = load_image(image, width_cells=width_cells, height_cells=height_cells, cell_pixel_size=cell_pixel_size)
         img_id = self.image_registry.register(
-            image, width_cells=width_cells, height_cells=height_cells, metadata=metadata
+            loaded_img, width_cells=width_cells, height_cells=height_cells, metadata=metadata
         )
         for ry in range(height_cells):
             for rx in range(width_cells):

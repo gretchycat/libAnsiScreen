@@ -37,3 +37,35 @@ def encode_block(
         rows.append("".join(row_str))
 
     return "\n".join(rows)
+
+
+def render_cell_block_fallback(
+    image: Any,
+    tile_x: int,
+    tile_y: int,
+    width_cells: int = 1,
+    height_cells: int = 1,
+) -> str:
+    """
+    Renders half-block (▀) subpixel fallback for a single cell tile (tile_x, tile_y)
+    within a multi-cell image scaled to (width_cells x 2*height_cells).
+    """
+    if not hasattr(image, "resize"):
+        return "🖼"
+
+    img_w = max(1, width_cells)
+    img_h = max(1, height_cells * 2)
+    img = image.resize((img_w, img_h)).convert("RGB")
+    pixels = img.load()
+
+    top_y = tile_y * 2
+    bot_y = top_y + 1
+
+    if 0 <= tile_x < img_w and 0 <= top_y < img_h:
+        tr, tg, tb = pixels[tile_x, top_y]
+        if bot_y < img_h:
+            br, bg, bb = pixels[tile_x, bot_y]
+        else:
+            br, bg, bb = tr, tg, tb
+        return f"\x1b[38;2;{tr};{tg};{tb}m\x1b[48;2;{br};{bg};{bb}m▀"
+    return "🖼"

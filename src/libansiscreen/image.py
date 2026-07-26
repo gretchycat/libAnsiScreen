@@ -60,3 +60,37 @@ class ImageRegistry:
         """
         self._images.clear()
         self._next_id = 1
+
+
+def load_image(
+    source: Any,
+    width_cells: int = 1,
+    height_cells: int = 1,
+    cell_pixel_size: tuple[int, int] = (8, 16),
+) -> Any:
+    """
+    Loads an image from a file path, bytes, or PIL Image instance,
+    and resizes it to fit into (width_cells * pixel_w, height_cells * pixel_h) pixels.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return source
+
+    img = None
+    if isinstance(source, str):
+        try:
+            img = Image.open(source)
+        except Exception:
+            return source
+    elif isinstance(source, bytes):
+        import io
+        img = Image.open(io.BytesIO(source))
+    elif hasattr(source, "resize"):
+        img = source
+    else:
+        return source
+
+    pixel_w = width_cells * cell_pixel_size[0]
+    pixel_h = height_cells * cell_pixel_size[1]
+    return img.resize((max(1, pixel_w), max(1, pixel_h)))
