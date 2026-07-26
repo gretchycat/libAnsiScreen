@@ -1,6 +1,6 @@
 # libansiscreen/framebuffer.py
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterator
 from .cell import Cell
 from .cursor import Cursor
 from .color.rgb import Color
@@ -22,6 +22,155 @@ _ANSI16 = create_ansi_16_palette()
 
 DEFAULT_FG = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG = _ANSI16.index_to_rgb(0)  # black
+
+
+# ----------------------------------------------------------------------
+# Transparent Proxy Classes for fb.rows backward compatibility
+# ----------------------------------------------------------------------
+class CellProxy:
+    """
+    Proxy object wrapping a cell position in a frameBuffer.
+    Attribute reads and writes dynamically synchronize with the binary buffer.
+    """
+
+    def __init__(self, fb: "frameBuffer", x: int, y: int) -> None:
+        object.__setattr__(self, "_fb", fb)
+        object.__setattr__(self, "_x", x)
+        object.__setattr__(self, "_y", y)
+
+    @property
+    def char(self) -> Optional[str]:
+        c = self._fb.get_cell(self._x, self._y)
+        return c.char if c else None
+
+    @char.setter
+    def char(self, value: Optional[str]) -> None:
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        c.char = value
+        self._fb.set_cell(self._x, self._y, c)
+
+    @property
+    def fg(self) -> Optional[Color]:
+        c = self._fb.get_cell(self._x, self._y)
+        return c.fg if c else None
+
+    @fg.setter
+    def fg(self, value: Optional[Color]) -> None:
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        c.fg = value
+        self._fb.set_cell(self._x, self._y, c)
+
+    @property
+    def bg(self) -> Optional[Color]:
+        c = self._fb.get_cell(self._x, self._y)
+        return c.bg if c else None
+
+    @bg.setter
+    def bg(self, value: Optional[Color]) -> None:
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        c.bg = value
+        self._fb.set_cell(self._x, self._y, c)
+
+    @property
+    def attrs(self) -> int:
+        c = self._fb.get_cell(self._x, self._y)
+        return c.attrs if c else 0
+
+    @attrs.setter
+    def attrs(self, value: int) -> None:
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        c.attrs = value
+        self._fb.set_cell(self._x, self._y, c)
+
+    def copy(self) -> Cell:
+        c = self._fb.get_cell(self._x, self._y)
+        return c.copy() if c else Cell()
+
+    def __getattr__(self, name: str) -> Any:
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        return getattr(c, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ("_fb", "_x", "_y"):
+            object.__setattr__(self, name, value)
+            return
+        c = self._fb.get_cell(self._x, self._y) or Cell()
+        setattr(c, name, value)
+        self._fb.set_cell(self._x, self._y, c)
+
+    def __repr__(self) -> str:
+        c = self._fb.get_cell(self._x, self._y)
+        return repr(c) if c else "Cell(char=None, fg=None, bg=None, attrs=0)"
+
+    def __eq__(self, other: object) -> bool:
+        c = self._fb.get_cell(self._x, self._y)
+        if c is None:
+            c = Cell()
+        if isinstance(other, CellProxy):
+            other = self._fb.get_cell(other._x, other._y) or Cell()
+        return c == other
+
+
+class RowProxy:
+    """
+    Proxy representing a single row in frameBuffer.
+    """
+
+    def __init__(self, fb: "frameBuffer", y: int) -> None:
+        self._fb = fb
+        self._y = y
+
+    def __getitem__(self, x: int) -> CellProxy:
+        return CellProxy(self._fb, x, self._y)
+
+    def __setitem__(self, x: int, cell: Optional[Cell]) -> None:
+        self._fb.set_cell(x, self._y, cell)
+
+    def __len__(self) -> int:
+        return self._fb.width
+
+    def __iter__(self) -> Iterator[CellProxy]:
+        for x in range(self._fb.width):
+            yield self[x]
+
+    def __repr__(self) -> str:
+        return repr([self[x] for x in range(self._fb.width)])
+
+
+class RowsProxy:
+    """
+    Proxy representing fb.rows (2D grid).
+    Synchronizes direct indexed mutations with binary buffer.
+    """
+
+    def __init__(self, fb: "frameBuffer") -> None:
+        self._fb = fb
+
+    def __getitem__(self, y: int) -> RowProxy:
+        return RowProxy(self._fb, y)
+
+    def __setitem__(self, y: int, row_cells: List[Optional[Cell]]) -> None:
+        self._fb._ensure_row(y)
+        for x, cell in enumerate(row_cells):
+            if x < self._fb.width:
+                self._fb.set_cell(x, y, cell)
+
+    def __len__(self) -> int:
+        return self._fb.height
+
+    def __iter__(self) -> Iterator[RowProxy]:
+        for y in range(self._fb.height):
+            yield RowProxy(self._fb, y)
+
+    def clear(self) -> None:
+        self._fb.cls()
+
+    def append(self, row_cells: List[Optional[Cell]]) -> None:
+        y = self._fb.height
+        self._fb._ensure_row(y)
+        for x, cell in enumerate(row_cells):
+            if x < self._fb.width:
+                self._fb.set_cell(x, y, cell)
 
 
 class frameBuffer:
@@ -57,7 +206,7 @@ class frameBuffer:
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
 
-        self._ensure_row(height)
+        self._ensure_row(height - 1)
 
     # ------------------------------------------------------------------
     # Properties & Backward Compatibility Adapters
@@ -69,19 +218,12 @@ class frameBuffer:
         return self._allocated_rows
 
     @property
-    def rows(self) -> List[List[Cell]]:
+    def rows(self) -> RowsProxy:
         """
-        Backward-compatibility property returning a 2D list of Cell objects.
-        Unpacks cells on-demand.
+        Backward-compatibility property returning a proxy object for 2D cell grid.
+        Mutations to rows[y][x] or rows[y][x].char update self.buffer directly.
         """
-        rows_list: List[List[Cell]] = []
-        for y in range(self._allocated_rows):
-            row: List[Cell] = []
-            for x in range(self.width):
-                cell = self.get_cell(x, y)
-                row.append(cell if cell is not None else Cell())
-            rows_list.append(row)
-        return rows_list
+        return RowsProxy(self)
 
     @classmethod
     def extend(cls, instance: Any) -> Any:
@@ -214,7 +356,7 @@ class frameBuffer:
                 if 0 <= target_x < self.width:
                     self._ensure_row(target_y)
                     offset = self._cell_offset(target_x, target_y)
-                    tile_info = (ry << 8) | rx  # store tile sub-row and sub-col
+                    tile_info = (ry << 8) | rx
                     pack_cell_fields(
                         self.buffer,
                         offset,

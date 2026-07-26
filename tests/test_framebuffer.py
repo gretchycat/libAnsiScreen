@@ -36,6 +36,25 @@ def test_cell_get_set_put():
     assert fb.get_cell(1, 0) is None
 
 
+def test_rows_proxy_direct_mutations():
+    fb = frameBuffer(width=10, height=5)
+    
+    # Direct element assignment via rows
+    fb.rows[0][0] = Cell(char="X", fg=Color(255, 0, 0))
+    assert fb.get_cell(0, 0).char == "X"
+    assert fb.get_cell(0, 0).fg == Color(255, 0, 0)
+
+    # In-place attribute mutation on cell proxy
+    fb.rows[0][0].char = "Y"
+    assert fb.get_cell(0, 0).char == "Y"
+    assert fb.rows[0][0].char == "Y"
+
+    # Row assignment
+    fb.rows[1] = [Cell(char="A"), Cell(char="B")]
+    assert fb.get_cell(0, 1).char == "A"
+    assert fb.get_cell(1, 1).char == "B"
+
+
 def test_cursor_movements_in_framebuffer():
     fb = frameBuffer(width=10, height=5)
     

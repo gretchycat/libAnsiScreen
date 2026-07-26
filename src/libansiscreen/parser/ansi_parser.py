@@ -190,7 +190,7 @@ class ANSIParser():
 
         elif final == "J":  # ED
             if p[0] == 0:
-                self.fb.clear_to_end_of_fb()
+                self.fb.clear_to_end_of_screen()
             elif p[0] == 2:
                 self.fb.cls()
 
