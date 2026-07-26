@@ -202,6 +202,7 @@ class frameBuffer:
         # Binary buffer storage
         self.buffer: bytearray = bytearray()
         self._allocated_rows: int = 0
+        self._pending_wrap: bool = False
 
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
@@ -417,12 +418,19 @@ class frameBuffer:
     # Line / Carriage Control
     # ------------------------------------------------------------------
     def carriage_return(self) -> None:
+        self._pending_wrap = False
         self.cursor.x = 0
 
     def line_feed(self) -> None:
-        self.cursor.y += 1
+        if self._pending_wrap:
+            self._pending_wrap = False
+            self.cursor.x = 0
+            self.cursor.y += 1
+        else:
+            self.cursor.y += 1
 
     def new_line(self) -> None:
+        self._pending_wrap = False
         self.cursor.x = 0
         self.cursor.y += 1
 
@@ -455,6 +463,12 @@ class frameBuffer:
     def put_char(self, char: str) -> None:
         if len(char) != 1:
             raise ValueError("put_char expects a single character: " + str(char))
+
+        if self._pending_wrap:
+            self._pending_wrap = False
+            self.cursor.x = 0
+            self.cursor.y += 1
+
         self._ensure_row(self.cursor.y)
         offset = self._cell_offset(self.cursor.x, self.cursor.y)
 
@@ -494,8 +508,8 @@ class frameBuffer:
     def _advance_cursor(self) -> None:
         self.cursor.x += 1
         if self.cursor.x >= self.width:
-            self.cursor.x = 0
-            self.cursor.y += 1
+            self.cursor.x = self.width - 1
+            self._pending_wrap = True
 
     def __repr__(self) -> str:
         return f"frameBuffer ({self.width}, {self.height})"
