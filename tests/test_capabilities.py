@@ -15,10 +15,14 @@ def test_terminal_capabilities_environment_detection():
     caps_iterm = detect_terminal_capabilities(env_iterm)
     assert caps_iterm.active_graphics_protocol == "iterm2"
 
-    # 3. Sixel Terminal Detection
+    # 3. Sixel Terminal Detection (xterm-vt340, foot, mlterm, Konsole)
     env_sixel = {"TERM": "xterm-vt340"}
     caps_sixel = detect_terminal_capabilities(env_sixel)
     assert caps_sixel.active_graphics_protocol == "sixel"
+
+    env_konsole = {"TERM_PROGRAM": "konsole", "KONSOLE_VERSION": "220400"}
+    caps_konsole = detect_terminal_capabilities(env_konsole)
+    assert caps_konsole.active_graphics_protocol == "sixel"
 
     # 4. ANSI 256 Color Depth
     env_256 = {"TERM": "xterm-256color"}

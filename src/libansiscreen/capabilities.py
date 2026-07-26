@@ -52,7 +52,12 @@ def detect_terminal_capabilities(env: Optional[Dict[str, str]] = None) -> Termin
         graphics_protocol = "kitty"
     elif term_program in ("iTerm.app", "WezTerm") or lc_terminal == "iTerm2":
         graphics_protocol = "iterm2"
-    elif term in ("mlterm", "foot", "xterm-vt340") or "XTERM_VERSION" in env:
+    elif (
+        term in ("mlterm", "foot", "xterm-vt340")
+        or "XTERM_VERSION" in env
+        or "KONSOLE_VERSION" in env
+        or term_program.lower() == "konsole"
+    ):
         graphics_protocol = "sixel"
     else:
         graphics_protocol = "block"
