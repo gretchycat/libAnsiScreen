@@ -56,6 +56,24 @@ def test_clip_paste_transparency_modes():
     save_output(dst, "test_clip_transparent_paste.ans")
 
 
+def test_clip_paste_none_color_preservation():
+    # Destination with white text on blue background
+    dst = Screen(width=5)
+    dst.put_cell(0, 0, char="A", fg=Color(255, 255, 255), bg=Color(0, 0, 255))
+
+    # Source with red text and None background
+    src = Screen(width=5)
+    src.put_cell(0, 0, char="B", fg=Color(255, 0, 0), bg=None)
+
+    # Paste src onto dst
+    dst.paste(src)
+
+    # Destination cell gets character "B", red foreground, and preserves blue background
+    assert dst.get_cell(0, 0).char == "B"
+    assert dst.get_cell(0, 0).fg == Color(255, 0, 0)
+    assert dst.get_cell(0, 0).bg == Color(0, 0, 255)
+
+
 def test_clip_tiling():
     tile_fb = Screen(width=2)
     tile_fb.put_cell(0, 0, char="#", fg=Color(255, 255, 0))

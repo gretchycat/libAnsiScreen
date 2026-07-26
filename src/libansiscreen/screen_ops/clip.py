@@ -107,6 +107,7 @@ def paste(
 ) -> None:
     """
     Paste src fb into dst fb with transparency rules directly in binary buffer.
+    When src cell has fg=None or bg=None, destination colors are preserved.
     """
     if transparent_char is None:
         transparent_char = set()
@@ -127,19 +128,6 @@ def paste(
         max_h = src.height if h is None else min(h, src.height)
 
     if max_w <= 0 or max_h <= 0:
-        return
-
-    # Fast Path: Opaque block copy via binary buffer slice assignment
-    if not transparent_char and not transparent_fg and not transparent_bg and not transparent_attrs:
-        copy_bytes = max_w * CELL_SIZE
-        for sy in range(max_h):
-            dy = dst_y + sy
-            if dy < 0:
-                continue
-            dst._ensure_row(dy)
-            src_offset = (sy * src.width) * CELL_SIZE
-            dst_offset = (dy * dst.width + max(0, dst_x)) * CELL_SIZE
-            dst.buffer[dst_offset : dst_offset + copy_bytes] = src.buffer[src_offset : src_offset + copy_bytes]
         return
 
     # Selective field copy with transparency rules directly in binary buffer
@@ -178,11 +166,11 @@ def paste(
             if s_cp != 0 and s_cp not in transparent_cps:
                 d_cp = s_cp
 
-            # Foreground update
+            # Foreground update (only copy if src foreground is set, i.e. not None)
             if not transparent_fg and (s_ff & FLAG_COLOR_SET):
                 d_fr, d_fg, d_fb, d_ff = s_fr, s_fg, s_fb, s_ff
 
-            # Background update
+            # Background update (only copy if src background is set, i.e. not None)
             if not transparent_bg and (s_bf & FLAG_COLOR_SET):
                 d_br, d_bg, d_bb, d_bf = s_br, s_bg, s_bb, s_bf
 
