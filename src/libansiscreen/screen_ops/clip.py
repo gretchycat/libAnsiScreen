@@ -44,13 +44,14 @@ def clear(fb: frameBuffer, box: Optional[Union[Box, tuple]] = None) -> None:
         for x in range(x0, x0 + w):
             if fb.get_cell(x, y) is not None:
                 fb.set_cell(
-                    x, y,
+                    x,
+                    y,
                     Cell(
                         char=None,
                         fg=None,
                         bg=None,
                         attrs=0,
-                    )
+                    ),
                 )
 
 def copy(fb, box: Optional[Box] = None) -> frameBuffer:

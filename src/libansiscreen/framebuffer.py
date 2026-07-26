@@ -493,11 +493,26 @@ class frameBuffer:
     # Clearing Operations
     # ------------------------------------------------------------------
     def cls(self) -> None:
-        old_height = self._allocated_rows
+        """
+        Trims down buffer rows, resets cursor to (0,0), and sets each cell
+        in the buffer to a space (' ') with current fg, bg, and attrs.
+        """
+        old_height = max(1, self._allocated_rows)
         self.buffer.clear()
         self.cursor.reset()
         self._allocated_rows = 0
-        self._ensure_row(old_height - 1)
+
+        space_cell = Cell(
+            char=" ",
+            fg=self.current_fg,
+            bg=self.current_bg,
+            attrs=self.current_attrs,
+        )
+        space_cell_bytes = bytearray(CELL_SIZE)
+        pack_cell(space_cell_bytes, 0, space_cell)
+
+        self.buffer.extend(bytes(space_cell_bytes) * (old_height * self.width))
+        self._allocated_rows = old_height
 
     def clear_row(self, y: int) -> None:
         self._ensure_row(y)

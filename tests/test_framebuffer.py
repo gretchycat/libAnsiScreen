@@ -154,9 +154,14 @@ def test_clearing_operations():
     fb.clear_row(0)
     assert fb.get_cell(0, 0).char is None
 
+    fb.set_foreground(Color(255, 0, 0))
+    fb.set_background(Color(0, 0, 255))
     fb.cls()
     assert fb.cursor.x == 0
     assert fb.cursor.y == 0
+    assert fb.get_cell(0, 0).char == " "
+    assert fb.get_cell(0, 0).fg == Color(255, 0, 0)
+    assert fb.get_cell(0, 0).bg == Color(0, 0, 255)
 
 
 def test_resize():
