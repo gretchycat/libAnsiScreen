@@ -51,3 +51,27 @@ def test_spixel_shapes_and_fill():
         spixel_regular_polygon(scr_fill, 10, 10, 8, 6, state=True, mode=mode)
         spixel_flood_fill(scr_fill, 10, 10, state=True, mode=mode)
         save_output(scr_fill, f"spixel_floodfill_{mode}.ans")
+
+
+def test_octant_bitmask_exact_mappings():
+    from libansiscreen.screen_ops.spixel import OCTANT_CHARS, OCTANT_MAP
+
+    assert OCTANT_CHARS[0x0F] == "▀"
+    assert OCTANT_CHARS[0xF0] == "▄"
+    assert OCTANT_CHARS[0x55] == "▌"
+    assert OCTANT_CHARS[0xAA] == "▐"
+    assert OCTANT_CHARS[0xFF] == "█"
+
+    assert OCTANT_MAP["▀"] == 0x0F
+    assert OCTANT_MAP["▄"] == 0xF0
+    assert OCTANT_MAP["▌"] == 0x55
+    assert OCTANT_MAP["▐"] == 0xAA
+    assert OCTANT_MAP["█"] == 0xFF
+
+    # Plot all 8 subpixels in cell (x=0..1, y=0..3)
+    scr = Screen(width=10)
+    for sub_y in range(4):
+        for sub_x in range(2):
+            spixel_plot(scr, sub_x, sub_y, state=True, mode=MODE_OCTANT)
+
+    assert scr.get_cell(0, 0).char == "█"

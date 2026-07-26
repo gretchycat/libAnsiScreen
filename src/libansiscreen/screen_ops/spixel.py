@@ -47,12 +47,29 @@ OCTANT_CHARS = [' '] * 256
 OCTANT_CHARS[0] = ' '
 OCTANT_CHARS[255] = '\u2588'  # Full block
 
+# Standard block element aliases for key 8-bit octant patterns
+OCTANT_OVERLAPS = {
+    0x0F: '\u2580',  # ▀ Upper Half
+    0xF0: '\u2584',  # ▄ Lower Half
+    0x55: '\u258c',  # ▌ Left Half
+    0xAA: '\u2590',  # ▐ Right Half
+    0x05: '\u2598',  # ▘ Top-Left Quadrant
+    0x0A: '\u259d',  # ▝ Top-Right Quadrant
+    0x50: '\u2596',  # ▖ Bottom-Left Quadrant
+    0xA0: '\u2597',  # ▗ Bottom-Right Quadrant
+}
+
 for mask in range(1, 255):
-    # Unicode Legacy Computing Supplement: Block Octants span U+1CD00 to U+1CDE5
-    # The code point offset follows the 8-bit binary value directly
-    OCTANT_CHARS[mask] = chr(0x1CD00 + mask - 1)
+    if mask in OCTANT_OVERLAPS:
+        OCTANT_CHARS[mask] = OCTANT_OVERLAPS[mask]
+    else:
+        # Unicode 16.0 Symbols for Legacy Computing Supplement: U+1CC00 + mask
+        OCTANT_CHARS[mask] = chr(0x1CC00 + mask)
 
 OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
+# Also index Unicode 16.0 raw octant codepoints for overlapping masks
+for mask in range(1, 255):
+    OCTANT_MAP[chr(0x1CC00 + mask)] = mask
 
 # 4-bit bitmask [TR, TL, BR, BL] -> Quadrant Character Map (16 total states)
 # Bit 0 (0x1): Top-Left     (x=0, y=0)
