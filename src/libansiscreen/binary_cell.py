@@ -88,6 +88,7 @@ def pack_cell(buffer: bytearray, offset: int, cell: Optional[Cell]) -> None:
     if cell.bg is not None:
         bg_r, bg_g, bg_b, bg_set = cell.bg.r, cell.bg.g, cell.bg.b, True
 
+    tile_info = ((cell.tile_y & 0x7F) << 8) | (cell.tile_x & 0xFF)
     pack_cell_fields(
         buffer,
         offset,
@@ -101,6 +102,7 @@ def pack_cell(buffer: bytearray, offset: int, cell: Optional[Cell]) -> None:
         bg_b=bg_b,
         bg_set=bg_set,
         attrs=cell.attrs,
+        tile_info=tile_info,
     )
 
 
@@ -137,4 +139,15 @@ def unpack_cell(buffer: bytearray, offset: int) -> Optional[Cell]:
     fg_color = Color(fr, fg, fb) if (ff & FLAG_COLOR_SET) else None
     bg_color = Color(br, bg, bb) if (bf & FLAG_COLOR_SET) else None
 
-    return Cell(char=char, fg=fg_color, bg=bg_color, attrs=attrs, image=image_id)
+    tile_x = tile_info & 0xFF
+    tile_y = (tile_info >> 8) & 0x7F
+
+    return Cell(
+        char=char,
+        fg=fg_color,
+        bg=bg_color,
+        attrs=attrs,
+        image=image_id,
+        tile_x=tile_x,
+        tile_y=tile_y,
+    )

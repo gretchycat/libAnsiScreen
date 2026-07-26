@@ -18,6 +18,7 @@ from ..color.rgb import Color
 from ..color.palette import create_ansi_16_palette, create_ansi_256_palette
 from ..color.quantize import quantize_exact, quantize_nearest_rgb
 from ..framebuffer import frameBuffer
+from .graphics import encode_image
 
 ANSI16 = create_ansi_16_palette()
 ANSI256 = create_ansi_256_palette()
@@ -140,10 +141,19 @@ class ANSIEmitter():
                     out[-1] += seq
                 ch = cell.char
                 if cell.is_image:
-                    ch = "🖼"
+                    proto = self.get_graphics_protocol()
+                    if proto in ("kitty", "sixel", "iterm2"):
+                        if cell.tile_x == 0 and cell.tile_y == 0:
+                            img_obj = cell.image.image if hasattr(cell.image, "image") else cell.image
+                            w_cells = cell.image.width_cells if hasattr(cell.image, "width_cells") else 1
+                            h_cells = cell.image.height_cells if hasattr(cell.image, "height_cells") else 1
+                            out[-1] += encode_image(img_obj, protocol=proto, width_cells=w_cells, height_cells=h_cells)
+                        ch = ""
+                    else:
+                        ch = "🖼"
                 elif self._dos_colors_match(prev.fg, prev.bg):
                     ch = "█"
-                out[-1] += (ch or " ")
+                out[-1] += (ch or "")
             out[-1] += "\x1b[0m"
             if row < height - 1:
                 out.append("")

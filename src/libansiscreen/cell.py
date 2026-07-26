@@ -46,6 +46,8 @@ class Cell:
     bg: Optional[Color] = DEFAULT_BG
     attrs: int = 0
     image: Optional[Any] = None
+    tile_x: int = 0
+    tile_y: int = 0
 
     @property
     def is_image(self) -> bool:
@@ -65,6 +67,8 @@ class Cell:
             and self.bg == other.bg
             and self.attrs == other.attrs
             and self.image == other.image
+            and self.tile_x == other.tile_x
+            and self.tile_y == other.tile_y
         )
 
     def diff(self, other: "Cell") -> int:
@@ -110,6 +114,8 @@ class Cell:
             bg=self.bg,
             attrs=self.attrs,
             image=self.image,
+            tile_x=self.tile_x,
+            tile_y=self.tile_y,
         )
 
     def shift_hsv(self, h: float, s:float,v:float):

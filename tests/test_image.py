@@ -81,3 +81,36 @@ def test_put_cell_image_and_clip_operations():
     assert dst_cell.is_image is True
     assert isinstance(dst_cell.image, ImageEntry)
     assert dst_cell.image.image == mock_pil_img
+
+
+def test_image_emitter_protocol_dispatch():
+    from PIL import Image
+    from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+
+    screen = Screen(width=10, height=5)
+    img = Image.new("RGBA", (16, 16), color=(0, 255, 0, 255))
+    screen.put_image(0, 0, image=img, width_cells=2, height_cells=2)
+
+    emitter = ANSIEmitter()
+
+    # Kitty Protocol
+    emitter.force_graphics_protocol("kitty")
+    out_kitty = emitter.emit(screen)
+    assert "\x1b_G" in out_kitty
+    assert "a=T" in out_kitty
+
+    # Sixel Protocol
+    emitter.force_graphics_protocol("sixel")
+    out_sixel = emitter.emit(screen)
+    assert "\x1bPq" in out_sixel
+    assert "\x1b\\" in out_sixel
+
+    # iTerm2 Protocol
+    emitter.force_graphics_protocol("iterm2")
+    out_iterm2 = emitter.emit(screen)
+    assert "\x1b]1337;File=" in out_iterm2
+
+    # Block / Fallback Protocol
+    emitter.force_graphics_protocol("block")
+    out_block = emitter.emit(screen)
+    assert "🖼" in out_block
