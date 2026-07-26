@@ -1,8 +1,19 @@
 import time
 import pytest
+from pathlib import Path
 from libansiscreen.screen import Screen
 from libansiscreen.color.rgb import Color
 from libansiscreen.screen_ops.clip import copy, paste
+from tests.helpers import OUT_DIR
+
+BENCHMARK_LOG = OUT_DIR / "benchmark_results.txt"
+
+
+def _log_benchmark(text: str) -> None:
+    """Prints benchmark output to stdout and appends to tests/out/benchmark_results.txt."""
+    print(text)
+    with BENCHMARK_LOG.open("a", encoding="utf-8") as f:
+        f.write(text + "\n")
 
 
 def build_populated_screen(width: int, height: int) -> Screen:
@@ -44,11 +55,12 @@ def test_benchmark_copy_paste_80x25():
     paste_time = t3 - t2
     paste_ops_sec = iterations / paste_time if paste_time > 0 else 0
 
-    print(
+    report = (
         f"\n[BENCHMARK 80x25] {iterations} Iterations:\n"
         f"  - Copy:  {copy_time:.4f}s ({copy_ops_sec:,.1f} ops/sec, {copy_time/iterations*1e6:.2f} µs/op)\n"
         f"  - Paste: {paste_time:.4f}s ({paste_ops_sec:,.1f} ops/sec, {paste_time/iterations*1e6:.2f} µs/op)"
     )
+    _log_benchmark(report)
 
     # Performance assertions
     assert copy_time < 2.0, "80x25 Copy benchmark exceeded target time"
@@ -83,11 +95,12 @@ def test_benchmark_copy_paste_160x50():
     paste_time = t3 - t2
     paste_ops_sec = iterations / paste_time if paste_time > 0 else 0
 
-    print(
+    report = (
         f"\n[BENCHMARK 160x50] {iterations} Iterations:\n"
         f"  - Copy:  {copy_time:.4f}s ({copy_ops_sec:,.1f} ops/sec, {copy_time/iterations*1e6:.2f} µs/op)\n"
         f"  - Paste: {paste_time:.4f}s ({paste_ops_sec:,.1f} ops/sec, {paste_time/iterations*1e6:.2f} µs/op)"
     )
+    _log_benchmark(report)
 
     # Performance assertions
     assert copy_time < 2.0, "160x50 Copy benchmark exceeded target time"
@@ -113,9 +126,10 @@ def test_benchmark_resize():
     total_time = t1 - t0
     ops_sec = iterations / total_time if total_time > 0 else 0
 
-    print(
+    report = (
         f"\n[BENCHMARK RESIZE] {iterations} Iterations (80x25 <-> 160x50):\n"
         f"  - Total: {total_time:.4f}s ({ops_sec:,.1f} resizes/sec, {total_time/iterations*1e6:.2f} µs/resize)"
     )
+    _log_benchmark(report)
 
     assert total_time < 2.0, "Resize benchmark exceeded target time"
