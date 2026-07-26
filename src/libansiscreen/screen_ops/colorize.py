@@ -34,6 +34,7 @@ class Colorize(frameBuffer):
                     cell.fg = color if tint is None else color.blend(cell.fg,tint)
                 if background:
                     cell.bg = color if tint is None else color.blend(cell.bg,tint)
+                self.set_cell(x, y, cell)
 
 # ------------------------------------------------------------
 # Vertical gradient (top → bottom)
@@ -66,6 +67,7 @@ class Colorize(frameBuffer):
                     cell.fg = color if tint is None else color.blend(cell.fg,tint)
                 if background:
                     cell.bg = color if tint is None else color.blend(cell.bg,tint)
+                self.set_cell(x, y, cell)
 
 # ------------------------------------------------------------
 # Diagonal gradient (top-left → bottom-right)
@@ -106,6 +108,7 @@ class Colorize(frameBuffer):
                     cell.fg = color if tint is None else color.blend(cell.fg,tint)
                 if background:
                     cell.bg = color if tint is None else color.blend(cell.bg,tint)
+                self.set_cell(x, y, cell)
 
 
 # ------------------------------------------------------------
@@ -137,6 +140,7 @@ class Colorize(frameBuffer):
                     cell.fg = color if tint is None else color.blend(cell.fg,tint)
                 if background:
                     cell.bg = color if tint is None else color.blend(cell.bg,tint)
+                self.set_cell(x, y, cell)
                 idx += 1
 
 # ------------------------------------------------------------

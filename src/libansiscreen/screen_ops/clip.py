@@ -169,6 +169,8 @@ def paste(
                 ):
                     dst_cell.attrs = src_cell.attrs
 
+                dst.set_cell(dx, dy, dst_cell)
+
 def tile(fb:frameBuffer, tl:frameBuffer):
     for y in range(0, fb.height, tl.height):
         for x in range(0,fb.width, tl.width):
