@@ -1,0 +1,71 @@
+import pytest
+from libansiscreen.screen import Screen
+from libansiscreen.color.rgb import Color
+from libansiscreen.renderer.ansi_emitter import ANSIEmitter, Box
+from libansiscreen.color.palette import (
+    create_ansi_16_palette,
+    create_ansi_256_palette,
+)
+from tests.helpers import save_output
+
+
+def test_emitter_basic_rendering():
+    screen = Screen(width=20)
+    screen.set_foreground(Color(255, 0, 0))
+    screen.put_text("Emitter Test")
+
+    emitter = ANSIEmitter()
+    ansi_str = emitter.emit(screen)
+    assert isinstance(ansi_str, str)
+    assert "\x1b[" in ansi_str
+
+    save_output(screen, "emitter_basic.ans", emitter=emitter)
+
+
+def test_emitter_output_modes_and_palettes():
+    screen = Screen(width=40)
+    screen.set_foreground(Color(200, 100, 50))
+    screen.set_background(Color(10, 20, 30))
+    screen.put_text("Palette and DOS Mode Tests")
+
+    # Truecolor / Modern
+    em_modern = ANSIEmitter()
+    save_output(screen, "emitter_out_mode.modern.ans", emitter=em_modern)
+
+    # ANSI 256
+    em_256 = ANSIEmitter(palette=create_ansi_256_palette())
+    save_output(screen, "emitter_out_mode.ansi256.ans", emitter=em_256)
+
+    # ANSI 16
+    em_16 = ANSIEmitter(palette=create_ansi_16_palette())
+    save_output(screen, "emitter_out_mode.ansi16.ans", emitter=em_16)
+
+    # DOS Mode
+    em_dos = ANSIEmitter(dos_mode=True)
+    save_output(screen, "emitter_out_mode.dos.ans", emitter=em_dos)
+
+    # DOS + ICE Mode
+    em_ice = ANSIEmitter(dos_mode=True, ice_mode=True)
+    save_output(screen, "emitter_out_mode.dos_ice.ans", emitter=em_ice)
+
+
+def test_emitter_box_subregion_and_raw():
+    screen = Screen(width=20, height=10)
+    screen.put_text("Line 0\nLine 1\nLine 2\nLine 3")
+
+    sub_box = Box(x=0, y=0, width=10, height=2)
+    emitter = ANSIEmitter()
+
+    ansi_sub = emitter.emit(screen, box=sub_box, raw=True)
+    assert isinstance(ansi_sub, str)
+
+    out_path = save_output(screen, "emitter_subregion.ans")
+    assert out_path.exists()
+
+
+def test_box_dataclass():
+    b = Box(x=5, y=5, width=10, height=10)
+    assert b.contains(5, 5)
+    assert b.contains(14, 14)
+    assert not b.contains(4, 5)
+    assert not b.contains(15, 15)

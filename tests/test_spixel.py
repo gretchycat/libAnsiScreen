@@ -1,0 +1,53 @@
+import pytest
+from libansiscreen.screen import Screen
+from libansiscreen.screen_ops.spixel import (
+    spixel_plot,
+    spixel_get,
+    spixel_line,
+    spixel_polyline,
+    spixel_regular_polygon,
+    spixel_regular_star,
+    spixel_flood_fill,
+    spixel_rectangle,
+    spixel_ellipse,
+    MODE_OCTANT,
+    MODE_BRAILLE,
+    MODE_QUADRANT,
+)
+from tests.helpers import save_output
+
+
+def test_spixel_modes_plot_and_get():
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+        scr = Screen(width=20)
+        spixel_plot(scr, 2, 2, state=True, mode=mode)
+        assert spixel_get(scr, 2, 2, mode=mode)
+
+        vy = 1 if mode == MODE_QUADRANT else 0
+        cell = scr.get_cell(1, vy)
+        assert cell is not None
+        assert cell.char is not None
+        save_output(scr, f"spixel_plot_{mode}.ans")
+
+
+def test_spixel_line_and_polyline():
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+        scr = Screen(width=40)
+        spixel_line(scr, 0, 0, 20, 10, state=True, mode=mode)
+        spixel_polyline(scr, [(0, 10), (10, 0), (20, 10)], state=True, mode=mode)
+        save_output(scr, f"spixel_lines_{mode}.ans")
+
+
+def test_spixel_shapes_and_fill():
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+        scr = Screen(width=40)
+        spixel_rectangle(scr, 2, 2, 14, 10, state=True, mode=mode)
+        spixel_ellipse(scr, 25, 10, 8, 6, state=True, mode=mode)
+        spixel_regular_polygon(scr, 15, 15, 6, 5, state=True, mode=mode)
+        spixel_regular_star(scr, 30, 20, 6, 5, 2, state=True, mode=mode)
+        save_output(scr, f"spixel_shapes_{mode}.ans")
+
+        scr_fill = Screen(width=40)
+        spixel_regular_polygon(scr_fill, 10, 10, 8, 6, state=True, mode=mode)
+        spixel_flood_fill(scr_fill, 10, 10, state=True, mode=mode)
+        save_output(scr_fill, f"spixel_floodfill_{mode}.ans")

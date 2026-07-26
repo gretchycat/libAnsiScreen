@@ -1,71 +1,22 @@
-
+import pytest
 from libansiscreen.screen import Screen
 from libansiscreen.color.rgb import Color
-from libansiscreen.renderer.ansi_emitter import ANSIEmitter
 from libansiscreen.screen_ops.colorize import Colorize
-
-# ------------------------------------------------------------
-# Output directory for visual inspection
-# ------------------------------------------------------------
-
-from pathlib import Path
-OUT = Path("out")
-OUT.mkdir(exist_ok=True)
-
-def emit(screen: Screen, name: str):
-    ansi = ANSIEmitter().emit(screen)
-    path = OUT / name
-    path.write_text(ansi)
-    print(f"Wrote {path}")
-
-
-# ------------------------------------------------------------
-# Builders
-# ------------------------------------------------------------
-
 from libansiscreen.screen_ops.prim import box
 from libansiscreen.screen_ops.clip import clear
 from libansiscreen.renderer.ansi_emitter import Box
 from libansiscreen.screen_ops.glyph_defs import BOX_BLOCK
+from tests.helpers import save_output
 
 
-def build_solid_block_screen(
-    width: int = 20,
-    height: int = 10,
-) -> Screen:
-    """
-    Create a solid block screen using the box primitive,
-    then clear a central region using the clear operation.
-    """
-    # Create a solid block screen
-    screen = box(
-        width,
-        height,
-        glyphs=BOX_BLOCK,
-    )
-
-    # Define a central box (middle 50%)
-    cx0 = width // 4
-    cy0 = height // 4
-    cx1 = width * 3 // 4
-    cy1 = height * 3 // 4
-
-    center_box = Box(
-        cx0,
-        cy0,
-        cx1 - cx0,
-        cy1 - cy0,
-    )
-
-    # Clear the central region (sets char/fg/bg to None)
+def build_solid_block_screen(width: int = 20, height: int = 10) -> Screen:
+    screen = box(width, height, glyphs=BOX_BLOCK)
+    center_box = Box(width // 4, height // 4, width // 2, height // 2)
     clear(screen, box=center_box)
-
     return Colorize.extend(screen)
 
+
 def build_gradient() -> list[Color]:
-    """
-    Simple RGB gradient for testing.
-    """
     return [
         Color(255, 0, 0),     # red
         Color(255, 255, 0),   # yellow
@@ -76,106 +27,64 @@ def build_gradient() -> list[Color]:
     ]
 
 
-# ------------------------------------------------------------
-# Tests
-# ------------------------------------------------------------
-
-def colorize_horizontal_fg_only_if_set():
+def test_colorize_horizontal_fg_only_if_set():
     screen = build_solid_block_screen()
     grad = build_gradient()
-    screen.colorize(
-        gradient=grad,
-        mode="horizontal",
-        only_if_set=True,
-    )
-    return screen
 
-def test_colorize_horizontal_fg_only_if_set():
-    screen= colorize_horizontal_fg_only_if_set()
-    # Solid area should be colored
+    screen.colorize(gradient=grad, mode="horizontal", only_if_set=True)
+
+    # Solid block cells have fg color assigned
     assert screen.get_cell(0, 0).fg is not None
-    # Cleared center should remain untouched
-    cx = screen.width // 2
-    cy = screen.height // 2
+
+    # Cleared central box remains None
+    cx, cy = screen.width // 2, screen.height // 2
     assert screen.get_cell(cx, cy).fg is None
 
+    save_output(screen, "colorize_horizontal_fg.ans")
 
-def colorize_vertical_bg_replace():
+
+def test_colorize_vertical_bg():
     screen = build_solid_block_screen()
     grad = build_gradient()
 
-    screen.colorize(
-        gradient=grad,
-        mode="vertical",
-        background=True,
-        foreground=False,
-    )
-    return screen
+    screen.colorize(gradient=grad, mode="vertical", background=True, foreground=False)
 
-def test_colorize_vertical_bg_replace():
-    screen=colorize_vertical_bg_replace()
     assert screen.get_cell(0, 0).bg is not None
     assert screen.get_cell(screen.width - 1, 0).bg is not None
 
+    save_output(screen, "colorize_vertical_bg.ans")
 
-def colorize_diag_tint():
+
+def test_colorize_diagonal_and_tint():
     screen = build_solid_block_screen()
     grad = build_gradient()
-    # First pass: hard foreground
-    screen.colorize(
-        gradient=grad,
-        mode="diag",
-    )
-    return screen
 
-def test_colorize_diag_tint():
-    screen=colorize_diag_tint()
-    fg_after = screen.get_cell(0, 0).fg
-    assert fg_after is not None
-    #assert fg_after != fg_before
+    screen.colorize(gradient=grad, mode="diagonal", direction="tlbr")
+    assert screen.get_cell(0, 0).fg is not None
+
+    save_output(screen, "colorize_diag_tint.ans")
 
 
-def colorize_words():
-    screen = Screen(30)
-
+def test_colorize_words():
+    screen = Screen(width=30)
     text = "Hello world from ANSI"
     for i, ch in enumerate(text):
         screen.put_cell(i, 0, char=ch)
 
-    grad = [
-        Color(255, 0, 0),
-        Color(0, 255, 0),
-        Color(0, 0, 255),
-    ]
+    grad = [Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)]
+    screen.colorize(gradient=grad, mode="words")
 
-    screen.colorize(
-        gradient=grad,
-        mode="words",
-    )
-    return screen
-
-def test_colorize_words():
-    screen=colorize_words()
-    # H, e, l should differ
+    # Sequential letters in word get distinct colors
     assert screen.get_cell(0, 0).fg != screen.get_cell(1, 0).fg
     assert screen.get_cell(1, 0).fg != screen.get_cell(2, 0).fg
 
-    # Space resets word
+    # Spaces reset word sequence
     assert screen.get_cell(5, 0).char == " "
 
-
-# ------------------------------------------------------------
-# Manual / visual execution
-# ------------------------------------------------------------
-
-def main():
-    emit(colorize_horizontal_fg_only_if_set(), "colorize_hotizontal_fg.ans")
-    emit(colorize_vertical_bg_replace(), "colorize_vertical_bg.ans")
-    emit(colorize_diag_tint(), "colorize_diag_tint.ans")
-    emit(colorize_words(), "colorize_words.ans")
-
-    print("Colorize visual tests complete.")
+    save_output(screen, "colorize_words.ans")
 
 
-if __name__ == "__main__":
-    main()
+def test_colorize_unknown_mode_raises():
+    screen = Screen(width=10)
+    with pytest.raises(ValueError):
+        screen.colorize(gradient=build_gradient(), mode="invalid_mode")

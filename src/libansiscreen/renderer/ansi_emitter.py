@@ -83,7 +83,7 @@ class ANSIEmitter():
             width, height = fb.width, fb.height
         else:
             start_x, start_y = max(0,box.x), max(0,box.y)
-            width, height = min(box.width,fb.width), miin(box.height,fb.height)
+            width, height = min(box.width,fb.width), min(box.height,fb.height)
         # hard reset + home
         out.append("\x1b[0m")
         # Terminal starts in ANSI reset defaults: fg=7 bg=0 attrs=0

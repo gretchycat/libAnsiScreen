@@ -1,17 +1,15 @@
 #!/bin/bash
-PWD=$(pwd)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ERR=0
-cd "$SCRIPT_DIR"
-for t in test_*.py; do
-	python3 "$t" thetis.ans
-	if [ $? = 0 ];then
-		echo -e "\033[1;32m=== ${t} passed\033[0m"
-	else
-		echo -e "\033[1;31m=== ${t} failed\033[0m"
-		ERR=1
-	fi
-done
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-cd ${PWD}
-exit $ERR
+echo "Running full test suite via pytest..."
+PYTHONPATH="$PROJECT_DIR/src" pytest "$SCRIPT_DIR"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo -e "\033[1;32m=== All unit tests passed! Outputs generated in tests/out/ ===\033[0m"
+else
+    echo -e "\033[1;31m=== Test suite failed with exit code $EXIT_CODE ===\033[0m"
+fi
+
+exit $EXIT_CODE

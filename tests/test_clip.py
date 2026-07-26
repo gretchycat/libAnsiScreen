@@ -1,70 +1,89 @@
+import pytest
 from pathlib import Path
-
-import sys
 from libansiscreen.screen import Screen
-from libansiscreen.renderer.ansi_emitter import ANSIEmitter
+from libansiscreen.color.rgb import Color
+from libansiscreen.screen_ops.clip import copy, clear, cut, paste, tile
+from tests.helpers import save_output
 
-from pathlib import Path
-OUT = Path("out")
-OUT.mkdir(exist_ok=True)
+THETIS_FILE = Path(__file__).parent / "thetis.ans"
 
-def emit(screen: Screen, name: str):
-    ansi = ANSIEmitter().emit(screen)
-    path = OUT / name
-    path.write_text(ansi)
-    print(f"Wrote {path}")
 
-def load_screen(path: Path) -> Screen:
+def test_clip_copy_clear_cut_paste():
+    scr = Screen(width=40)
+    scr.set_foreground(Color(255, 0, 0))
+    scr.set_background(Color(0, 0, 100))
+    scr.put_text("0123456789\n" * 4)
+
+    # Box (x=2, y=1, w=5, h=2)
+    box_region = (2, 1, 5, 2)
+
+    # Copy
+    copied_fb = scr.copy(box_region)
+    assert copied_fb.width == 5
+    assert copied_fb.height == 2
+    assert copied_fb.get_cell(0, 0).char == "2"
+
+    # Paste copied onto destination
+    dst = Screen(width=40)
+    dst.paste(copied_fb, box=(10, 0, 5, 2))
+    assert dst.get_cell(10, 0).char == "2"
+    save_output(dst, "test_clip_pasted.ans")
+
+    # Clear
+    scr.clear(box_region)
+    assert scr.get_cell(2, 1).char is None
+    save_output(scr, "test_clip_cleared.ans")
+
+    # Cut
+    cut_fb = scr.cut((0, 0, 5, 1))
+    assert cut_fb.get_cell(0, 0).char == "0"
+    assert scr.get_cell(0, 0).char is None
+
+
+def test_clip_paste_transparency_modes():
+    src = Screen(width=5)
+    src.put_cell(0, 0, char="X", fg=Color(255, 0, 0), bg=Color(0, 255, 0))
+    src.put_cell(1, 0, char=" ", fg=Color(255, 0, 0), bg=Color(0, 255, 0))
+
+    dst = Screen(width=10)
+    dst.put_cell(0, 0, char="A", fg=Color(255, 255, 255), bg=Color(10, 10, 10))
+    dst.put_cell(1, 0, char="B", fg=Color(255, 255, 255), bg=Color(10, 10, 10))
+
+    # Paste with transparent space character
+    dst.paste(src, transparent_char={" "})
+    assert dst.get_cell(0, 0).char == "X"
+    assert dst.get_cell(1, 0).char == "B"  # Space was skipped!
+    save_output(dst, "test_clip_transparent_paste.ans")
+
+
+def test_clip_tiling():
+    tile_fb = Screen(width=2)
+    tile_fb.put_cell(0, 0, char="#", fg=Color(255, 255, 0))
+    tile_fb.put_cell(1, 0, char=".", fg=Color(0, 255, 255))
+
+    screen = Screen(width=8, height=2)
+    screen.tile(tile_fb)
+
+    assert screen.get_cell(0, 0).char == "#"
+    assert screen.get_cell(1, 0).char == "."
+    assert screen.get_cell(2, 0).char == "#"
+    assert screen.get_cell(3, 0).char == "."
+    save_output(screen, "test_clip_tiled.ans")
+
+
+def test_clip_with_sample_ans_file():
+    if not THETIS_FILE.exists():
+        pytest.skip("thetis.ans sample file missing")
+
     screen = Screen(width=80)
-    screen.print(path.read_bytes())
-    return screen
+    screen.print(THETIS_FILE.read_bytes())
 
-def middle_box(screen: Screen):
-    """
-    Return the middle 50% box of the screen as (x, y, w, h).
-    """
-    x = screen.width // 4
-    y = screen.height // 4
-    w = screen.width // 2
-    h = screen.height // 2
-    return (x, y, w, h)
+    box_region = (20, 5, 40, 10)
+    copied = screen.copy(box_region)
+    save_output(copied, "test_clip_copy_truecolor.ans")
 
-def lower_right_origin(screen: Screen):
-    """
-    Return (x, y) for the lower-right quadrant origin.
-    """
-    x = screen.width // 2
-    y = screen.height // 2
-    return x, y
+    full_copy = screen.copy()
+    save_output(full_copy, "test_clip_fullcopy_truecolor.ans")
 
-def test_clip_pipeline():
-    src_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("thetix.ans")
-    assert src_path.exists(), "Missing input ANSI file"
-
-    # Load original screen
-    screen = load_screen(src_path)
-
-    # Compute regions
-    box = middle_box(screen)
-    dst_x, dst_y = lower_right_origin(screen)
-
-    # --- COPY ---
-    buf = screen.copy(box)
-    emit(buf, Path("test_clip_copy_truecolor.ans"))
-    buf2 = screen.copy()
-    emit(buf2, Path("test_clip_fullcopy_truecolor.ans"))
-
-    # --- CLEAR ---
-    screen.clear(box)
-    emit(screen, Path("test_clip_cleared.ans"))
-
-    # --- PASTE ---
-    screen.paste(
-        buf,
-        box=(dst_x, dst_y, None, None),
-    )
-    emit(screen, Path("test_clip_pasted.ans"))
-
-if __name__ == "__main__":
-    test_clip_pipeline()
-    print("test_clip_pipeline completed")
+    screen.clear(box_region)
+    save_output(screen, "test_clip_cleared_thetis.ans")
