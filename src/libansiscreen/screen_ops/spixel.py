@@ -13,6 +13,7 @@ import math
 MODE_BRAILLE = "braille"
 MODE_OCTANT = "octant"
 MODE_QUADRANT = "quadrant"
+MODE_SEXTANT = "sextant"
 
 # ==============================================================================
 # 1. BRAILLE MODE LOOKUPS (2x4 Grid, U+2800..U+28FF)
@@ -132,6 +133,44 @@ def _build_octant_table():
 OCTANT_CHARS, OCTANT_MAP = _build_octant_table()
 
 # ==============================================================================
+# 4. BLOCK SEXTANT MODE LOOKUPS (2x3 Grid, Symbols for Legacy Computing)
+# ==============================================================================
+SEXTANT_BIT_MASKS = [
+    [0x01, 0x04, 0x10],  # bx = 0 (Left column:  subpixels 1, 3, 5)
+    [0x02, 0x08, 0x20]   # bx = 1 (Right column: subpixels 2, 4, 6)
+]
+
+SEXTANT_OVERLAPS = {
+    0x0F: '\u2580',  # ▀ Upper Half
+    0x3C: '\u2584',  # ▄ Lower Half
+    0x15: '\u258c',  # ▌ Left Half
+    0x2A: '\u2590',  # ▐ Right Half
+    0x05: '\u2598',  # ▘ Top-Left Quadrant
+    0x0A: '\u259d',  # ▝ Top-Right Quadrant
+    0x14: '\u2596',  # ▖ Bottom-Left Quadrant
+    0x28: '\u2597',  # ▗ Bottom-Right Quadrant
+}
+
+def _build_sextant_table():
+    sextant_chars = [' '] * 64
+    sextant_chars[0] = ' '
+    sextant_chars[63] = '\u2588'  # Full block
+
+    for mask in range(1, 63):
+        if mask in SEXTANT_OVERLAPS:
+            sextant_chars[mask] = SEXTANT_OVERLAPS[mask]
+        else:
+            sextant_chars[mask] = chr(0x1FB00 + mask - 1)
+
+    sextant_map = {char: mask for mask, char in enumerate(sextant_chars)}
+    for mask in range(1, 63):
+        sextant_map[chr(0x1FB00 + mask - 1)] = mask
+
+    return sextant_chars, sextant_map
+
+SEXTANT_CHARS, SEXTANT_MAP = _build_sextant_table()
+
+# ==============================================================================
 # HELPERS & PLOTTING FUNCTIONS
 # ==============================================================================
 def is_subpixel_char(char, mode=MODE_OCTANT):
@@ -143,6 +182,8 @@ def is_subpixel_char(char, mode=MODE_OCTANT):
         return char in OCTANT_MAP
     elif mode == MODE_QUADRANT:
         return char in QUADRANT_MAP
+    elif mode == MODE_SEXTANT:
+        return char in SEXTANT_MAP or (0x1FB00 <= ord(char) <= 0x1FB3F)
     return False
 
 def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_OCTANT):
@@ -153,6 +194,9 @@ def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_OCTANT):
     if mode in [ MODE_BRAILLE, MODE_OCTANT]:
         vy = y // 4
         by = y % 4
+    elif mode == MODE_SEXTANT:
+        vy = y // 3
+        by = y % 3
     current = fb.get_cell(vx, vy)
     if not isinstance(current, Cell):
         current = Cell()
@@ -180,6 +224,14 @@ def spixel_plot(fb: frameBuffer, x, y, state, mode=MODE_OCTANT):
         else:
             bitmask &= ~mask
         current.char = QUADRANT_CHARS[bitmask]
+    elif mode == MODE_SEXTANT:
+        mask = SEXTANT_BIT_MASKS[bx][by]
+        bitmask = SEXTANT_MAP[current.char] if is_subpixel_char(current.char, MODE_SEXTANT) else 0
+        if state:
+            bitmask |= mask
+        else:
+            bitmask &= ~mask
+        current.char = SEXTANT_CHARS[bitmask]
     fb.set_cell(vx,vy, current)
 
 def spixel_get(fb: frameBuffer, x, y, mode=MODE_OCTANT):
@@ -190,6 +242,9 @@ def spixel_get(fb: frameBuffer, x, y, mode=MODE_OCTANT):
     if mode in [ MODE_BRAILLE, MODE_OCTANT]:
         vy = y // 4
         by = y % 4
+    elif mode == MODE_SEXTANT:
+        vy = y // 3
+        by = y % 3
     current = fb.get_cell(vx, vy)
     if not isinstance(current, Cell):
         return False
@@ -203,6 +258,10 @@ def spixel_get(fb: frameBuffer, x, y, mode=MODE_OCTANT):
     elif mode == MODE_QUADRANT and is_subpixel_char(current.char, MODE_QUADRANT):
         mask = QUADRANT_BIT_MASKS[bx][by]
         bitmask = QUADRANT_MAP[current.char]
+        return bool(bitmask & mask)
+    elif mode == MODE_SEXTANT and is_subpixel_char(current.char, MODE_SEXTANT):
+        mask = SEXTANT_BIT_MASKS[bx][by]
+        bitmask = SEXTANT_MAP[current.char]
         return bool(bitmask & mask)
     return False
 

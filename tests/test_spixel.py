@@ -13,12 +13,13 @@ from libansiscreen.screen_ops.spixel import (
     MODE_OCTANT,
     MODE_BRAILLE,
     MODE_QUADRANT,
+    MODE_SEXTANT,
 )
 from tests.helpers import save_output
 
 
 def test_spixel_modes_plot_and_get():
-    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT, MODE_SEXTANT]:
         scr = Screen(width=20)
         spixel_plot(scr, 2, 2, state=True, mode=mode)
         assert spixel_get(scr, 2, 2, mode=mode)
@@ -31,7 +32,7 @@ def test_spixel_modes_plot_and_get():
 
 
 def test_spixel_line_and_polyline():
-    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT, MODE_SEXTANT]:
         scr = Screen(width=40)
         spixel_line(scr, 0, 0, 20, 10, state=True, mode=mode)
         spixel_polyline(scr, [(0, 10), (10, 0), (20, 10)], state=True, mode=mode)
@@ -39,7 +40,7 @@ def test_spixel_line_and_polyline():
 
 
 def test_spixel_shapes_and_fill():
-    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT]:
+    for mode in [MODE_OCTANT, MODE_BRAILLE, MODE_QUADRANT, MODE_SEXTANT]:
         scr = Screen(width=40)
         spixel_rectangle(scr, 2, 2, 14, 10, state=True, mode=mode)
         spixel_ellipse(scr, 25, 10, 8, 6, state=True, mode=mode)
@@ -68,13 +69,32 @@ def test_octant_bitmask_exact_mappings():
     assert OCTANT_MAP["▐"] == 0xAA
     assert OCTANT_MAP["█"] == 0xFF
 
-    #assert OCTANT_MAP[chr(0x1CC00 + 1)] == 0x01
-    #assert OCTANT_MAP[chr(0x1CC00 + 0x05)] == 0x05
-
     # Plot all 8 subpixels in cell (x=0..1, y=0..3)
     scr = Screen(width=10)
     for sub_y in range(4):
         for sub_x in range(2):
             spixel_plot(scr, sub_x, sub_y, state=True, mode=MODE_OCTANT)
+
+    assert scr.get_cell(0, 0).char == "█"
+
+
+def test_sextant_bitmask_exact_mappings():
+    from libansiscreen.screen_ops.spixel import SEXTANT_CHARS, SEXTANT_MAP
+
+    assert SEXTANT_CHARS[0] == " "
+    assert SEXTANT_CHARS[63] == "█"
+    assert SEXTANT_CHARS[0x01] == chr(0x1FB00)
+    assert SEXTANT_CHARS[0x05] == "▘"
+
+    assert SEXTANT_MAP[" "] == 0
+    assert SEXTANT_MAP["█"] == 63
+    assert SEXTANT_MAP[chr(0x1FB00)] == 0x01
+    assert SEXTANT_MAP["▘"] == 0x05
+
+    # Plot all 6 subpixels in cell (x=0..1, y=0..2)
+    scr = Screen(width=10)
+    for sub_y in range(3):
+        for sub_x in range(2):
+            spixel_plot(scr, sub_x, sub_y, state=True, mode=MODE_SEXTANT)
 
     assert scr.get_cell(0, 0).char == "█"
