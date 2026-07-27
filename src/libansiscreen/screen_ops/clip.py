@@ -22,7 +22,7 @@ def _coerce_box(box: Optional[Union[Box, Iterable[int]]]) -> Optional[Box]:
 
 def clear(fb: frameBuffer, box: Optional[Union[Box, tuple]] = None) -> None:
     """
-    Clear cells in `fb` inside `box` using high-performance binary memory slicing.
+    Clear cells in `fb` inside `box`.
     If box is None, clears the entire fb.
     """
     if box is None:
@@ -37,24 +37,35 @@ def clear(fb: frameBuffer, box: Optional[Union[Box, tuple]] = None) -> None:
     if w <= 0 or h <= 0:
         return
 
-    empty_cell_bytes = bytes(CELL_SIZE)
-    for dy in range(h):
-        sy = y0 + dy
-        if 0 <= sy < fb.height and 0 <= x0 < fb.width:
-            copy_cols = min(w, fb.width - x0)
-            offset = fb._cell_offset(x0, sy)
-            fb.buffer[offset : offset + copy_cols * CELL_SIZE] = empty_cell_bytes * copy_cols
+    if fb.use_binary:
+        empty_cell_bytes = bytes(CELL_SIZE)
+        for dy in range(h):
+            sy = y0 + dy
+            if 0 <= sy < fb.height and 0 <= x0 < fb.width:
+                copy_cols = min(w, fb.width - x0)
+                offset = fb._cell_offset(x0, sy)
+                fb._buffer[offset : offset + copy_cols * CELL_SIZE] = empty_cell_bytes * copy_cols
+    else:
+        for dy in range(h):
+            sy = y0 + dy
+            if 0 <= sy < len(fb._rows) and 0 <= x0 < fb.width:
+                row = fb._rows[sy]
+                for dx in range(min(w, fb.width - x0)):
+                    row[x0 + dx] = Cell()
 
 
 def copy(fb: frameBuffer, box: Optional[Box] = None) -> frameBuffer:
     """
-    Copy a region of a fb into a new fb using binary memory buffer slicing.
+    Copy a region of a fb into a new fb.
     If box is None, returns a full deep copy of the fb.
     Box is defined as (x, y, width, height).
     """
     if box is None:
-        new_fb = frameBuffer(fb.width, height=fb.height)
-        new_fb.buffer = bytearray(fb.buffer)
+        new_fb = frameBuffer(fb.width, height=fb.height, use_binary=fb.use_binary)
+        if fb.use_binary:
+            new_fb._buffer = bytearray(fb._buffer)
+        else:
+            new_fb._rows = [[c.copy() if c is not None else None for c in row] for row in fb._rows]
         new_fb.image_registry = copy_module.copy(fb.image_registry)
         return new_fb
 
@@ -66,22 +77,34 @@ def copy(fb: frameBuffer, box: Optional[Box] = None) -> frameBuffer:
     if h <= 0:
         raise ValueError("Box height must be positive")
 
-    new_fb = frameBuffer(w, height=h)
+    new_fb = frameBuffer(w, height=h, use_binary=fb.use_binary)
     new_fb.image_registry = copy_module.copy(fb.image_registry)
     if x0 >= fb.width or y0 >= fb.height:
         return new_fb
 
-    copy_cols = min(w, fb.width - x0) if x0 >= 0 else 0
-    if copy_cols <= 0:
-        return new_fb
+    if fb.use_binary:
+        copy_cols = min(w, fb.width - x0) if x0 >= 0 else 0
+        if copy_cols <= 0:
+            return new_fb
 
-    copy_bytes = copy_cols * CELL_SIZE
-    for dy in range(h):
-        sy = y0 + dy
-        if 0 <= sy < fb.height and 0 <= dy < h:
-            src_off = (sy * fb.width + max(0, x0)) * CELL_SIZE
-            dst_off = (dy * w) * CELL_SIZE
-            new_fb.buffer[dst_off : dst_off + copy_bytes] = fb.buffer[src_off : src_off + copy_bytes]
+        copy_bytes = copy_cols * CELL_SIZE
+        for dy in range(h):
+            sy = y0 + dy
+            if 0 <= sy < fb.height and 0 <= dy < h:
+                src_off = (sy * fb.width + max(0, x0)) * CELL_SIZE
+                dst_off = (dy * w) * CELL_SIZE
+                new_fb._buffer[dst_off : dst_off + copy_bytes] = fb._buffer[src_off : src_off + copy_bytes]
+    else:
+        for dy in range(h):
+            sy = y0 + dy
+            if 0 <= sy < len(fb._rows):
+                src_row = fb._rows[sy]
+                dst_row = new_fb._rows[dy]
+                for dx in range(w):
+                    sx = x0 + dx
+                    if 0 <= sx < fb.width:
+                        c = src_row[sx]
+                        dst_row[dx] = c.copy() if c is not None else None
 
     return new_fb
 
@@ -107,7 +130,7 @@ def paste(
     transparent_attrs: bool = False,
 ) -> None:
     """
-    Paste src fb into dst fb with transparency rules directly in binary buffer.
+    Paste src fb into dst fb with transparency rules.
     When src cell has fg=None or bg=None, destination colors are preserved.
     """
     if transparent_char is None:
@@ -136,62 +159,113 @@ def paste(
         if dst.image_registry.get(img_id) is None:
             dst.image_registry._images[img_id] = entry
 
-    # Selective field copy with transparency rules directly in binary buffer
-    transparent_cps = {ord(c) for c in transparent_char if len(c) == 1}
+    if dst.use_binary and src.use_binary:
+        transparent_cps = {ord(c) for c in transparent_char if len(c) == 1}
 
-    for sy in range(max_h):
-        dy = dst_y + sy
-        if dy < 0:
-            continue
-        dst._ensure_row(dy)
+        for sy in range(max_h):
+            dy = dst_y + sy
+            if dy < 0:
+                continue
+            dst._ensure_row(dy)
 
-        for sx in range(max_w):
-            dx = dst_x + sx
-            if dx < 0 or dx >= dst.width:
+            for sx in range(max_w):
+                dx = dst_x + sx
+                if dx < 0 or dx >= dst.width:
+                    continue
+
+                src_off = (sy * src.width + sx) * CELL_SIZE
+                dst_off = (dy * dst.width + dx) * CELL_SIZE
+
+                (
+                    s_cp, s_fr, s_fg, s_fb, s_ff,
+                    s_br, s_bg, s_bb, s_bf,
+                    s_attrs, s_tile
+                ) = CELL_STRUCT.unpack_from(src._buffer, src_off)
+
+                if s_tile == FLAG_CELL_NULL:
+                    continue
+
+                (
+                    d_cp, d_fr, d_fg, d_fb, d_ff,
+                    d_br, d_bg, d_bb, d_bf,
+                    d_attrs, d_tile
+                ) = CELL_STRUCT.unpack_from(dst._buffer, dst_off)
+
+                # Character update
+                if s_cp != 0 and s_cp not in transparent_cps:
+                    d_cp = s_cp
+
+                # Foreground update (only copy if src foreground is set, i.e. not None)
+                if not transparent_fg and (s_ff & FLAG_COLOR_SET):
+                    d_fr, d_fg, d_fb, d_ff = s_fr, s_fg, s_fb, s_ff
+
+                # Background update (only copy if src background is set, i.e. not None)
+                if not transparent_bg and (s_bf & FLAG_COLOR_SET):
+                    d_br, d_bg, d_bb, d_bf = s_br, s_bg, s_bb, s_bf
+
+                # Attributes update
+                if not transparent_attrs:
+                    d_attrs = s_attrs
+
+                d_tile = 0  # Clear null flag
+
+                CELL_STRUCT.pack_into(
+                    dst._buffer, dst_off,
+                    d_cp, d_fr, d_fg, d_fb, d_ff,
+                    d_br, d_bg, d_bb, d_bf,
+                    d_attrs, d_tile
+                )
+    else:
+        for sy in range(max_h):
+            dy = dst_y + sy
+            if dy < 0:
+                continue
+            dst._ensure_row(dy)
+
+            src_row = src._rows[sy] if sy < len(src._rows) else None
+            dst_row = dst._rows[dy]
+
+            if src_row is None:
                 continue
 
-            src_off = (sy * src.width + sx) * CELL_SIZE
-            dst_off = (dy * dst.width + dx) * CELL_SIZE
+            for sx in range(max_w):
+                dx = dst_x + sx
+                if dx < 0 or dx >= dst.width:
+                    continue
 
-            (
-                s_cp, s_fr, s_fg, s_fb, s_ff,
-                s_br, s_bg, s_bb, s_bf,
-                s_attrs, s_tile
-            ) = CELL_STRUCT.unpack_from(src.buffer, src_off)
+                sc = src_row[sx]
+                if sc is None:
+                    continue
 
-            if s_tile == FLAG_CELL_NULL:
-                continue
+                dc = dst_row[dx] or Cell()
 
-            (
-                d_cp, d_fr, d_fg, d_fb, d_ff,
-                d_br, d_bg, d_bb, d_bf,
-                d_attrs, d_tile
-            ) = CELL_STRUCT.unpack_from(dst.buffer, dst_off)
+                new_char = dc.char
+                if sc.char is not None and sc.char not in transparent_char:
+                    new_char = sc.char
 
-            # Character update
-            if s_cp != 0 and s_cp not in transparent_cps:
-                d_cp = s_cp
+                new_fg = dc.fg
+                if not transparent_fg and sc.fg is not None:
+                    new_fg = sc.fg
 
-            # Foreground update (only copy if src foreground is set, i.e. not None)
-            if not transparent_fg and (s_ff & FLAG_COLOR_SET):
-                d_fr, d_fg, d_fb, d_ff = s_fr, s_fg, s_fb, s_ff
+                new_bg = dc.bg
+                if not transparent_bg and sc.bg is not None:
+                    new_bg = sc.bg
 
-            # Background update (only copy if src background is set, i.e. not None)
-            if not transparent_bg and (s_bf & FLAG_COLOR_SET):
-                d_br, d_bg, d_bb, d_bf = s_br, s_bg, s_bb, s_bf
+                new_attrs = dc.attrs
+                if not transparent_attrs:
+                    new_attrs = sc.attrs
 
-            # Attributes update
-            if not transparent_attrs:
-                d_attrs = s_attrs
+                new_img = sc.image if sc.image is not None else dc.image
 
-            d_tile = 0  # Clear null flag
-
-            CELL_STRUCT.pack_into(
-                dst.buffer, dst_off,
-                d_cp, d_fr, d_fg, d_fb, d_ff,
-                d_br, d_bg, d_bb, d_bf,
-                d_attrs, d_tile
-            )
+                dst_row[dx] = Cell(
+                    char=new_char,
+                    fg=new_fg,
+                    bg=new_bg,
+                    attrs=new_attrs,
+                    image=new_img,
+                    tile_x=sc.tile_x,
+                    tile_y=sc.tile_y,
+                )
 
 
 def tile(fb: frameBuffer, tl: frameBuffer) -> None:
@@ -201,3 +275,4 @@ def tile(fb: frameBuffer, tl: frameBuffer) -> None:
     for y in range(0, fb.height, tl.height):
         for x in range(0, fb.width, tl.width):
             paste(fb, tl, box=(x, y, tl.width, tl.height))
+

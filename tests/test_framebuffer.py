@@ -172,3 +172,35 @@ def test_resize():
     assert fb.width == 5
     assert fb.height >= 2
     assert len(fb.rows[0]) == 5
+
+
+def test_use_binary_mode_toggle():
+    fb_default = frameBuffer(width=10, height=5)
+    assert fb_default.use_binary is False
+    assert hasattr(fb_default, "_rows")
+
+    fb_binary = frameBuffer(width=10, height=5, use_binary=True)
+    assert fb_binary.use_binary is True
+    assert hasattr(fb_binary, "buffer")
+
+
+def test_binary_vs_object_framebuffer_parity():
+    for use_bin in (False, True):
+        fb = frameBuffer(width=10, height=3, use_binary=use_bin)
+        fb.put_cell(0, 0, char="H", fg=Color(255, 0, 0), bg=Color(0, 255, 0), attrs=ATTR_BOLD)
+        fb.cursor_goto(1, 0)
+        fb.put_text("ello")
+        assert fb.get_cell(0, 0).char == "H"
+        assert fb.get_cell(0, 0).fg == Color(255, 0, 0)
+        assert fb.get_cell(1, 0).char == "e"
+        assert fb.get_cell(4, 0).char == "o"
+
+        fb.cls()
+        assert fb.get_cell(0, 0).char == " "
+
+        fb.put_text("XYZ")
+        fb.resize(width=5, height=2)
+        assert fb.width == 5
+        assert fb.height >= 2
+        assert fb.get_cell(0, 0).char == "X"
+

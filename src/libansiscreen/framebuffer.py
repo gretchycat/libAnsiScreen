@@ -175,11 +175,12 @@ class RowsProxy:
 
 class frameBuffer:
     """
-    Lossless, document-oriented screen buffer using a high-performance
-    binary memory buffer (16-byte packed cell struct).
+    Lossless, document-oriented screen buffer.
 
+    - Defaults to object-based storage (list of lists of Cell objects) for maximum performance.
+    - Optional binary mode (`use_binary=True`) using packed cell structs for testing/benchmarking.
     - Width is fixed unless explicitly resized.
-    - Height grows dynamically via binary buffer expansion.
+    - Height grows dynamically.
     - Cursor represents logical write position.
     - Graphics state (colors + attributes) is explicit.
     - Integrated ImageRegistry for Kitty, Sixel, and iTerm2 graphics.
@@ -188,24 +189,27 @@ class frameBuffer:
     # ------------------------------------------------------------------
     # Construction
     # ------------------------------------------------------------------
-    def __init__(self, width: int, height: int = 1) -> None:
+    def __init__(self, width: int, height: int = 1, use_binary: bool = False) -> None:
         if width <= 0:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
+        self.use_binary: bool = use_binary
         self.cursor: Cursor = Cursor()
 
         # Current graphics state (SGR-like)
         self.current_fg: Optional[Color] = DEFAULT_FG
         self.current_bg: Optional[Color] = DEFAULT_BG
         self.current_attrs: int = 0
-
-        # Binary buffer storage
-        self.buffer: bytearray = bytearray()
-        self._allocated_rows: int = 0
         self._pending_wrap: bool = False
 
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
+
+        if self.use_binary:
+            self._buffer: bytearray = bytearray()
+            self._allocated_rows: int = 0
+        else:
+            self._rows: List[List[Optional[Cell]]] = []
 
         self._ensure_row(height - 1)
 
@@ -216,15 +220,52 @@ class frameBuffer:
     @property
     def height(self) -> int:
         """Logical height of the screen in rows."""
-        return self._allocated_rows
+        if self.use_binary:
+            return self._allocated_rows
+        return len(self._rows)
 
     @property
-    def rows(self) -> RowsProxy:
+    def rows(self) -> Any:
         """
-        Backward-compatibility property returning a proxy object for 2D cell grid.
-        Mutations to rows[y][x] or rows[y][x].char update self.buffer directly.
+        Returns 2D grid of cells.
+        When use_binary is False, returns list of lists of Cell objects directly for maximum performance.
+        When use_binary is True, returns RowsProxy object to synchronize with binary buffer.
         """
-        return RowsProxy(self)
+        if self.use_binary:
+            return RowsProxy(self)
+        return self._rows
+
+    @property
+    def buffer(self) -> bytearray:
+        """
+        Binary bytearray buffer.
+        Returns the internal bytearray when use_binary is True, or dynamically packs
+        self._rows into a bytearray when use_binary is False.
+        """
+        if self.use_binary:
+            return self._buffer
+        buf = bytearray(self.height * self.width * CELL_SIZE)
+        for y, row in enumerate(self._rows):
+            for x, cell in enumerate(row):
+                if cell is not None:
+                    pack_cell(buf, (y * self.width + x) * CELL_SIZE, cell)
+        return buf
+
+    @buffer.setter
+    def buffer(self, val: bytearray) -> None:
+        if self.use_binary:
+            self._buffer = val
+            self._allocated_rows = len(val) // (self.width * CELL_SIZE) if self.width > 0 else 0
+        else:
+            rows_count = len(val) // (self.width * CELL_SIZE) if self.width > 0 else 0
+            self._rows = []
+            for y in range(rows_count):
+                row = []
+                for x in range(self.width):
+                    offset = (y * self.width + x) * CELL_SIZE
+                    cell = unpack_cell(val, offset)
+                    row.append(cell)
+                self._rows.append(row)
 
     @classmethod
     def extend(cls, instance: Any) -> Any:
@@ -240,82 +281,126 @@ class frameBuffer:
         return instance
 
     # ------------------------------------------------------------------
-    # Internal Binary Memory Helpers
+    # Internal Memory Helpers
     # ------------------------------------------------------------------
     def _cell_offset(self, x: int, y: int) -> int:
         return (y * self.width + x) * CELL_SIZE
 
     def _ensure_row(self, y: int) -> None:
-        """Ensure row y exists in binary buffer."""
-        if y >= self._allocated_rows:
-            target_rows = y + 1
-            additional_rows = target_rows - self._allocated_rows
+        """Ensure row y exists in buffer."""
+        if self.use_binary:
+            if y >= self._allocated_rows:
+                target_rows = y + 1
+                additional_rows = target_rows - self._allocated_rows
 
-            default_cell = Cell(
+                default_cell = Cell(
+                    char=None,
+                    fg=self.current_fg,
+                    bg=self.current_bg,
+                    attrs=self.current_attrs,
+                )
+                default_cell_bytes = bytearray(CELL_SIZE)
+                pack_cell(default_cell_bytes, 0, default_cell)
+
+                self._buffer.extend(bytes(default_cell_bytes) * (additional_rows * self.width))
+                self._allocated_rows = target_rows
+        else:
+            tpl = Cell(
                 char=None,
                 fg=self.current_fg,
                 bg=self.current_bg,
                 attrs=self.current_attrs,
             )
-            default_cell_bytes = bytearray(CELL_SIZE)
-            pack_cell(default_cell_bytes, 0, default_cell)
-
-            self.buffer.extend(bytes(default_cell_bytes) * (additional_rows * self.width))
-            self._allocated_rows = target_rows
+            while len(self._rows) <= y:
+                row = [tpl.copy() for _ in range(self.width)]
+                self._rows.append(row)
 
     def _clamp_x(self, x: int) -> int:
         return max(0, min(self.width - 1, x))
 
     def resize(self, width: int, height: int) -> None:
-        """Resize the binary framebuffer grid."""
-        if height > 0:
-            if height < self._allocated_rows:
-                del self.buffer[height * self.width * CELL_SIZE :]
-                self._allocated_rows = height
-            else:
-                self._ensure_row(height - 1)
+        """Resize the framebuffer grid."""
+        if self.use_binary:
+            if height > 0:
+                if height < self._allocated_rows:
+                    del self._buffer[height * self.width * CELL_SIZE :]
+                    self._allocated_rows = height
+                else:
+                    self._ensure_row(height - 1)
 
-        if width > 0 and width != self.width:
-            old_width = self.width
-            old_rows = self._allocated_rows
-            old_buffer = bytes(self.buffer)
+            if width > 0 and width != self.width:
+                old_width = self.width
+                old_rows = self._allocated_rows
+                old_buffer = bytes(self._buffer)
 
-            self.width = width
-            self.buffer = bytearray()
-            self._allocated_rows = 0
-            self._ensure_row(old_rows - 1)
+                self.width = width
+                self._buffer = bytearray()
+                self._allocated_rows = 0
+                self._ensure_row(old_rows - 1)
 
-            copy_cols = min(old_width, width)
-            for y in range(old_rows):
-                src_offset = (y * old_width) * CELL_SIZE
-                dst_offset = (y * width) * CELL_SIZE
-                self.buffer[dst_offset : dst_offset + copy_cols * CELL_SIZE] = old_buffer[
-                    src_offset : src_offset + copy_cols * CELL_SIZE
-                ]
+                copy_cols = min(old_width, width)
+                for y in range(old_rows):
+                    src_offset = (y * old_width) * CELL_SIZE
+                    dst_offset = (y * width) * CELL_SIZE
+                    self._buffer[dst_offset : dst_offset + copy_cols * CELL_SIZE] = old_buffer[
+                        src_offset : src_offset + copy_cols * CELL_SIZE
+                    ]
+        else:
+            if width > 0 and width != self.width:
+                old_width = self.width
+                self.width = width
+                diff = width - old_width
+                if diff > 0:
+                    tpl = Cell(
+                        char=None,
+                        fg=self.current_fg,
+                        bg=self.current_bg,
+                        attrs=self.current_attrs,
+                    )
+                    row_add = [tpl.copy() for _ in range(diff)]
+                    for y in range(len(self._rows)):
+                        self._rows[y].extend([c.copy() for c in row_add])
+                else:
+                    for y in range(len(self._rows)):
+                        del self._rows[y][width:]
+
+            if height > 0:
+                if height < len(self._rows):
+                    del self._rows[height:]
+                else:
+                    self._ensure_row(height - 1)
 
     # ------------------------------------------------------------------
     # Cell Access
     # ------------------------------------------------------------------
     def get_cell(self, x: int, y: int) -> Optional[Cell]:
+        if x < 0 or x >= self.width or y < 0:
+            return None
         self._ensure_row(y)
-        if y < 0 or y >= self._allocated_rows:
-            return None
-        if x < 0 or x >= self.width:
-            return None
-        cell = unpack_cell(self.buffer, self._cell_offset(x, y))
+        if self.use_binary:
+            if y >= self._allocated_rows:
+                return None
+            cell = unpack_cell(self._buffer, self._cell_offset(x, y))
+        else:
+            if y >= len(self._rows):
+                return None
+            cell = self._rows[y][x]
         if cell is not None and isinstance(cell.image, int):
             cell.image = self.image_registry.get(cell.image)
         return cell
 
     def set_cell(self, x: int, y: int, cell: Optional[Cell]) -> None:
-        if x < 0 or x >= self.width:
+        if x < 0 or x >= self.width or y < 0:
             return
         self._ensure_row(y)
         if cell is not None and cell.image is not None and not isinstance(cell.image, (int, ImageEntry)):
             img_id = self.image_registry.register(cell.image)
             cell = cell.copy()
             cell.image = self.image_registry.get(img_id)
-        pack_cell(self.buffer, self._cell_offset(x, y), cell)
+        if self.use_binary:
+            pack_cell(self._buffer, self._cell_offset(x, y), cell)
+        else:
+            self._rows[y][x] = cell
 
     def put_cell(
         self,
@@ -361,20 +446,24 @@ class frameBuffer:
         img_id = self.image_registry.register(
             loaded_img, width_cells=width_cells, height_cells=height_cells, metadata=metadata
         )
+        img_entry = self.image_registry.get(img_id)
         for ry in range(height_cells):
             for rx in range(width_cells):
                 target_x = x + rx
                 target_y = y + ry
                 if 0 <= target_x < self.width:
                     self._ensure_row(target_y)
-                    offset = self._cell_offset(target_x, target_y)
-                    tile_info = (ry << 8) | rx
-                    pack_cell_fields(
-                        self.buffer,
-                        offset,
-                        codepoint_or_imgid=IMAGE_FLAG | img_id,
-                        tile_info=tile_info,
-                    )
+                    if self.use_binary:
+                        offset = self._cell_offset(target_x, target_y)
+                        tile_info = (ry << 8) | rx
+                        pack_cell_fields(
+                            self._buffer,
+                            offset,
+                            codepoint_or_imgid=IMAGE_FLAG | img_id,
+                            tile_info=tile_info,
+                        )
+                    else:
+                        self.set_cell(target_x, target_y, Cell(image=img_entry, tile_x=rx, tile_y=ry))
         return img_id
 
     # ------------------------------------------------------------------
@@ -470,30 +559,41 @@ class frameBuffer:
             self.cursor.y += 1
 
         self._ensure_row(self.cursor.y)
-        offset = self._cell_offset(self.cursor.x, self.cursor.y)
 
-        fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
-        if self.current_fg is not None:
-            fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
+        if self.use_binary:
+            offset = self._cell_offset(self.cursor.x, self.cursor.y)
 
-        bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
-        if self.current_bg is not None:
-            bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
+            fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
+            if self.current_fg is not None:
+                fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
 
-        pack_cell_fields(
-            self.buffer,
-            offset,
-            codepoint_or_imgid=ord(char),
-            fg_r=fg_r,
-            fg_g=fg_g,
-            fg_b=fg_b,
-            fg_set=fg_set,
-            bg_r=bg_r,
-            bg_g=bg_g,
-            bg_b=bg_b,
-            bg_set=bg_set,
-            attrs=self.current_attrs,
-        )
+            bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
+            if self.current_bg is not None:
+                bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
+
+            pack_cell_fields(
+                self._buffer,
+                offset,
+                codepoint_or_imgid=ord(char),
+                fg_r=fg_r,
+                fg_g=fg_g,
+                fg_b=fg_b,
+                fg_set=fg_set,
+                bg_r=bg_r,
+                bg_g=bg_g,
+                bg_b=bg_b,
+                bg_set=bg_set,
+                attrs=self.current_attrs,
+            )
+        else:
+            cell = Cell(
+                char=char,
+                fg=self.current_fg,
+                bg=self.current_bg,
+                attrs=self.current_attrs,
+            )
+            self._rows[self.cursor.y][self.cursor.x] = cell
+
         self._advance_cursor()
 
     def put_text(self, text: str) -> None:
@@ -522,67 +622,93 @@ class frameBuffer:
         Trims down buffer rows, resets cursor to (0,0), and sets each cell
         in the buffer to a space (' ') with current fg, bg, and attrs.
         """
-        old_height = max(1, self._allocated_rows)
-        self.buffer.clear()
+        old_height = max(1, self.height)
         self.cursor.reset()
-        self._allocated_rows = 0
+        if self.use_binary:
+            self._buffer.clear()
+            self._allocated_rows = 0
 
-        space_cell = Cell(
-            char=" ",
-            fg=self.current_fg,
-            bg=self.current_bg,
-            attrs=self.current_attrs,
-        )
-        space_cell_bytes = bytearray(CELL_SIZE)
-        pack_cell(space_cell_bytes, 0, space_cell)
+            space_cell = Cell(
+                char=" ",
+                fg=self.current_fg,
+                bg=self.current_bg,
+                attrs=self.current_attrs,
+            )
+            space_cell_bytes = bytearray(CELL_SIZE)
+            pack_cell(space_cell_bytes, 0, space_cell)
 
-        self.buffer.extend(bytes(space_cell_bytes) * (old_height * self.width))
-        self._allocated_rows = old_height
+            self._buffer.extend(bytes(space_cell_bytes) * (old_height * self.width))
+            self._allocated_rows = old_height
+        else:
+            self._rows = [
+                [
+                    Cell(
+                        char=" ",
+                        fg=self.current_fg,
+                        bg=self.current_bg,
+                        attrs=self.current_attrs,
+                    )
+                    for _ in range(self.width)
+                ]
+                for _ in range(old_height)
+            ]
 
     def clear_row(self, y: int) -> None:
         self._ensure_row(y)
-        offset = self._cell_offset(0, y)
-        self.buffer[offset : offset + self.width * CELL_SIZE] = bytes(self.width * CELL_SIZE)
+        if self.use_binary:
+            offset = self._cell_offset(0, y)
+            self._buffer[offset : offset + self.width * CELL_SIZE] = bytes(self.width * CELL_SIZE)
+        else:
+            self._rows[y] = [Cell() for _ in range(self.width)]
 
     def clear_to_end_of_line(self) -> None:
         self._ensure_row(self.cursor.y)
-        space_cp = ord(" ")
+        if self.use_binary:
+            space_cp = ord(" ")
 
-        fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
-        if self.current_fg is not None:
-            fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
+            fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
+            if self.current_fg is not None:
+                fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
 
-        bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
-        if self.current_bg is not None:
-            bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
+            bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
+            if self.current_bg is not None:
+                bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
 
-        for x in range(self.cursor.x, self.width):
-            offset = self._cell_offset(x, self.cursor.y)
-            pack_cell_fields(
-                self.buffer,
-                offset,
-                codepoint_or_imgid=space_cp,
-                fg_r=fg_r,
-                fg_g=fg_g,
-                fg_b=fg_b,
-                fg_set=fg_set,
-                bg_r=bg_r,
-                bg_g=bg_g,
-                bg_b=bg_b,
-                bg_set=bg_set,
-                attrs=self.current_attrs,
-            )
+            for x in range(self.cursor.x, self.width):
+                offset = self._cell_offset(x, self.cursor.y)
+                pack_cell_fields(
+                    self._buffer,
+                    offset,
+                    codepoint_or_imgid=space_cp,
+                    fg_r=fg_r,
+                    fg_g=fg_g,
+                    fg_b=fg_b,
+                    fg_set=fg_set,
+                    bg_r=bg_r,
+                    bg_g=bg_g,
+                    bg_b=bg_b,
+                    bg_set=bg_set,
+                    attrs=self.current_attrs,
+                )
+        else:
+            for x in range(self.cursor.x, self.width):
+                self._rows[self.cursor.y][x] = Cell(
+                    char=" ",
+                    fg=self.current_fg,
+                    bg=self.current_bg,
+                    attrs=self.current_attrs,
+                )
 
     def clear_to_end_of_screen(self) -> None:
         self.clear_to_end_of_line()
-        for y in range(self.cursor.y + 1, self._allocated_rows):
+        for y in range(self.cursor.y + 1, self.height):
             self.clear_row(y)
 
     # ------------------------------------------------------------------
     # Color Shift Utilities
     # ------------------------------------------------------------------
     def shift_hsv(self, h: float, s: float, v: float) -> None:
-        for y in range(self._allocated_rows):
+        for y in range(self.height):
             for x in range(self.width):
                 cell = self.get_cell(x, y)
                 if cell:
@@ -590,9 +716,10 @@ class frameBuffer:
                     self.set_cell(x, y, cell)
 
     def shift_rgb(self, r: int, g: int, b: int) -> None:
-        for y in range(self._allocated_rows):
+        for y in range(self.height):
             for x in range(self.width):
                 cell = self.get_cell(x, y)
                 if cell:
                     cell.shift_rgb(r, g, b)
                     self.set_cell(x, y, cell)
+

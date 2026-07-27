@@ -88,15 +88,16 @@ class Screen(Colorize, frameBuffer):
         current_attrs (int): Active SGR text attribute bitmask (e.g. bold, underline).
     """
 
-    def __init__(self, width: int, height: int = 1) -> None:
+    def __init__(self, width: int, height: int = 1, use_binary: bool = False) -> None:
         """
         Initialize a new Screen instance.
 
         Args:
             width (int): Fixed width of the screen buffer in columns (> 0).
             height (int, optional): Initial height in rows. Defaults to 1.
+            use_binary (bool, optional): If True, use binary memory storage. Defaults to False.
         """
-        super().__init__(width=width, height=height)
+        super().__init__(width=width, height=height, use_binary=use_binary)
         self.parser = ANSIParser(self)
         self.emitter = ANSIEmitter()
 
