@@ -2,6 +2,9 @@ from __future__ import annotations
 from ..framebuffer import frameBuffer
 from ..cell import Cell
 from .pixel import regular_polygon, regular_star
+from .quadrants import get_quadrant_array
+from .sextants import get_sextant_array
+from .octants import get_octant_array
 import math
 
 # simulated graphic framebuffer
@@ -11,12 +14,12 @@ import math
 
 # Modes
 MODE_BRAILLE = "braille"
-MODE_OCTANT = "octant"
 MODE_QUADRANT = "quadrant"
 MODE_SEXTANT = "sextant"
+MODE_OCTANT = "octant"
 
 # ==============================================================================
-# 1. BRAILLE MODE LOOKUPS (2x4 Grid, U+2800..U+28FF)
+# BRAILLE MODE LOOKUPS (2x4 Grid, U+2800..U+28FF)
 # ==============================================================================
 # Mapping (bx, by) -> Braille bitmask value
 BRAILLE_BIT_MASKS = [
@@ -25,150 +28,34 @@ BRAILLE_BIT_MASKS = [
 ]
 
 # ==============================================================================
-# 3. BLOCK QUADRANT MODE LOOKUPS (2x2 Grid, Block Elements)
+# BLOCK QUADRANT MODE LOOKUPS (2x2 Grid, Block Elements)
 # ==============================================================================
-# Mapping (bx, by) -> bit index 0..3
 QUADRANT_BIT_MASKS = [
     [0x01, 0x04],  # bx = 0 (Left column:  rows 0, 1 -> bits 0, 2)
     [0x02, 0x08]   # bx = 1 (Right column: rows 0, 1 -> bits 1, 3)
 ]
-
-# 4-bit bitmask [TR, TL, BR, BL] -> Quadrant Character Map (16 total states)
-QUADRANT_CHARS = [
-    ' ',       # 0b0000 (0)  - Empty space
-    '\u2598',  # 0b0001 (1)  - ▘ Top-Left
-    '\u259d',  # 0b0010 (2)  - ▝ Top-Right
-    '\u2580',  # 0b0011 (3)  - ▀ Upper Half
-    '\u2596',  # 0b0100 (4)  - ▖ Bottom-Left
-    '\u258c',  # 0b0101 (5)  - ▌ Left Half
-    '\u259e',  # 0b0110 (6)  - ▞ Top-Right + Bottom-Left
-    '\u259b',  # 0b0111 (7)  - ▛ Top-Left + Top-Right + Bottom-Left
-    '\u2597',  # 0b1000 (8)  - ▗ Bottom-Right
-    '\u259a',  # 0b1001 (9)  - ▚ Top-Left + Bottom-Right
-    '\u2590',  # 0b1010 (10) - ▐ Right Half
-    '\u259c',  # 0b1011 (11) - ▜ Top-Left + Top-Right + Bottom-Right
-    '\u2584',  # 0b1100 (12) - ▄ Lower Half
-    '\u2599',  # 0b1101 (13) - ▙ Top-Left + Bottom-Left + Bottom-Right
-    '\u259f',  # 0b1110 (14) - ▟ Top-Right + Bottom-Left + Bottom-Right
-    '\u2588',  # 0b1111 (15) - █ Full Block
-]
-
-# Fast character -> 4-bit bitmask reverse lookup
+QUADRANT_CHARS = get_quadrant_array()
 QUADRANT_MAP = {char: mask for mask, char in enumerate(QUADRANT_CHARS)}
 
 # ==============================================================================
-# 2. BLOCK OCTANT MODE LOOKUPS (2x4 Grid, Symbols for Legacy Computing)
-# ==============================================================================
-OCTANT_BIT_MASKS = [
-    [0x01, 0x04, 0x10, 0x40],  # bx = 0 (Left column:  Octants 1, 3, 5, 7)
-    [0x02, 0x08, 0x20, 0x80]   # bx = 1 (Right column: Octants 2, 4, 6, 8)
-]
-
-# Explicit overrides for all 26 unified/legacy fallback combinations
-OVERRIDES = {
-    # 16 Quadrant Fallbacks
-    0x00: QUADRANT_CHARS[0],   # Space
-    0x05: QUADRANT_CHARS[1],   # Quadrant Upper Left
-    0x0A: QUADRANT_CHARS[2],   # Quadrant Upper Right
-    0x0F: QUADRANT_CHARS[3],   # Upper Half Block
-    0x50: QUADRANT_CHARS[4],   # Quadrant Lower Left
-    0x55: QUADRANT_CHARS[5],   # Left Half Block
-    0x5A: QUADRANT_CHARS[6],   # Quadrant Upper Right + Lower Left
-    0x5F: QUADRANT_CHARS[7],   # Quadrant Upper Half + Lower Left
-    0xA0: QUADRANT_CHARS[8],   # Quadrant Lower Right
-    0xA5: QUADRANT_CHARS[9],   # Quadrant Upper Left + Lower Right
-    0xAA: QUADRANT_CHARS[10],  # Right Half Block
-    0xAF: QUADRANT_CHARS[11],  # Quadrant Upper Half + Lower Right
-    0xF0: QUADRANT_CHARS[12],  # Lower Half Block
-    0xF5: QUADRANT_CHARS[13],  # Quadrant Upper Left + Lower Half
-    0xFA: QUADRANT_CHARS[14],  # Quadrant Upper Right + Lower Half
-    0xFF: QUADRANT_CHARS[15],  # Full Block
-
-    # 10 Non-Quadrant Horizontal Cuts & Corner Octants
-    0x01: '\U0001CEA8',  # Octant 1
-    0x02: '\U0001CEAB',  # Octant 2
-    0x03: '\U0001FB82',    # Octants 1, 2
-    #0x07: '\U0001FB85',    # Octants 1, 2, 3, 4, 5, 6 (Upper 3/4 Block)
-    #0x30: '\U0001FC80',    # Octants 5, 6
-    #0x3F: '\U0001FB88',    # Octants 1, 2, 3, 4, 5, 6
-    #0x40: '\U0001CEAC',  # Octant 7
-    #0x80: '\U0001CEAF',  # Octant 8
-    0xC0: '\u2582',    # Octants 7, 8
-    0xFC: '\U0001FB83',    # Octants 3, 4, 5, 6, 7, 8
-    #0x0F: '\u2580'
-}
-
-def _build_octant_table():
-    octant_chars = [' '] * 256
-    
-    # 1. Fill unified overrides
-    for mask, char in OVERRIDES.items():
-        octant_chars[mask] = char
-
-    # 2. Build Unicode 16.0 octant ordering sequence algorithmically
-    #    Unicode sequences octants by highest-active-bit first.
-    unassigned = []
-    for mask in range(256):
-        if mask not in OVERRIDES:
-            # Generate active octants list in standard order (e.g. [1, 2, 6])
-            active = [i + 1 for i in range(8) if (mask & (1 << i))]
-            # Key sorts by: (highest_octant, rest_of_octants_as_string)
-            sort_key = (active[-1], "".join(str(d) for d in active[:-1]))
-            unassigned.append((sort_key, mask))
-
-    # Sort to match U+1CD00 sequence
-    unassigned.sort(key=lambda x: x[0])
-
-    # Assign U+1CD00..U+1CDE5
-    for idx, (_, mask) in enumerate(unassigned):
-        octant_chars[mask] = chr(0x1CD00 + idx)
-
-    # 3. Build two-way map (ensuring overrides map back correctly)
-    octant_map = {char: mask for mask, char in enumerate(octant_chars)}
-    for mask, char in OVERRIDES.items():
-        octant_map[char] = mask
-
-    return octant_chars, octant_map
-
-OCTANT_CHARS, OCTANT_MAP = _build_octant_table()
-
-# ==============================================================================
-# 4. BLOCK SEXTANT MODE LOOKUPS (2x3 Grid, Symbols for Legacy Computing)
+# BLOCK SEXTANT MODE LOOKUPS (2x3 Grid, Symbols for Legacy Computing)
 # ==============================================================================
 SEXTANT_BIT_MASKS = [
     [0x01, 0x04, 0x10],  # bx = 0 (Left column:  subpixels 1, 3, 5)
     [0x02, 0x08, 0x20]   # bx = 1 (Right column: subpixels 2, 4, 6)
 ]
+SEXTANT_CHARS = get_sextant_array()
+SEXTANT_MAP = {char: mask for mask, char in enumerate(SEXTANT_CHARS)}
 
-SEXTANT_OVERLAPS = {
-    0x0F: '\u2580',  # ▀ Upper Half
-    0x3C: '\u2584',  # ▄ Lower Half
-    0x15: '\u258c',  # ▌ Left Half
-    0x2A: '\u2590',  # ▐ Right Half
-    0x05: '\u2598',  # ▘ Top-Left Quadrant
-    0x0A: '\u259d',  # ▝ Top-Right Quadrant
-    0x14: '\u2596',  # ▖ Bottom-Left Quadrant
-    0x28: '\u2597',  # ▗ Bottom-Right Quadrant
-}
-
-def _build_sextant_table():
-    sextant_chars = [' '] * 64
-    sextant_chars[0] = ' '
-    sextant_chars[63] = '\u2588'  # Full block
-
-    for mask in range(1, 63):
-        if mask in SEXTANT_OVERLAPS:
-            sextant_chars[mask] = SEXTANT_OVERLAPS[mask]
-        else:
-            sextant_chars[mask] = chr(0x1FB00 + mask - 1)
-
-    sextant_map = {char: mask for mask, char in enumerate(sextant_chars)}
-    for mask in range(1, 63):
-        sextant_map[chr(0x1FB00 + mask - 1)] = mask
-
-    return sextant_chars, sextant_map
-
-SEXTANT_CHARS, SEXTANT_MAP = _build_sextant_table()
+# ==============================================================================
+# BLOCK OCTANT MODE LOOKUPS (2x4 Grid, Symbols for Legacy Computing)
+# ==============================================================================
+OCTANT_BIT_MASKS = [
+    [0x01, 0x04, 0x10, 0x40],  # bx = 0 (Left column:  Octants 1, 3, 5, 7)
+    [0x02, 0x08, 0x20, 0x80]   # bx = 1 (Right column: Octants 2, 4, 6, 8)
+]
+OCTANT_CHARS = get_octant_array()
+OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
 
 # ==============================================================================
 # HELPERS & PLOTTING FUNCTIONS

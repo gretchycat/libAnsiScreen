@@ -84,12 +84,12 @@ def test_sextant_bitmask_exact_mappings():
     assert SEXTANT_CHARS[0] == " "
     assert SEXTANT_CHARS[63] == "█"
     assert SEXTANT_CHARS[0x01] == chr(0x1FB00)
-    assert SEXTANT_CHARS[0x05] == "▘"
+    assert SEXTANT_CHARS[0x05] == "🬄"
 
     assert SEXTANT_MAP[" "] == 0
     assert SEXTANT_MAP["█"] == 63
     assert SEXTANT_MAP[chr(0x1FB00)] == 0x01
-    assert SEXTANT_MAP["▘"] == 0x05
+   
 
     # Plot all 6 subpixels in cell (x=0..1, y=0..2)
     scr = Screen(width=10)
