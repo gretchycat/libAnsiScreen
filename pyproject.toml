@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "libAnsiScreen"
-version = "0.1.3"
+version = "0.2.0"
 description = "Character-cell rendering engine with ANSI import/export"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,7 +29,7 @@ classifiers = [
 ]
 
 # Runtime dependencies go here (empty for now)
-dependencies = []
+dependencies = ['pillow']
 
 [tool.setuptools]
 package-dir = {"" = "src"}

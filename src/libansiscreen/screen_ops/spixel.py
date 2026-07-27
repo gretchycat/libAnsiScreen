@@ -24,15 +24,6 @@ BRAILLE_BIT_MASKS = [
 ]
 
 # ==============================================================================
-# 2. BLOCK OCTANT MODE LOOKUPS (2x4 Grid, Symbols for Legacy Computing)
-# ==============================================================================
-# Mapping (bx, by) -> bit index 0..7
-OCTANT_BIT_MASKS = [
-    [0x01, 0x04, 0x10, 0x40],  # bx = 0 (Left column: rows 0, 1, 2, 3 -> bits 0, 2, 4, 6)
-    [0x02, 0x08, 0x20, 0x80]   # bx = 1 (Right column: rows 0, 1, 2, 3 -> bits 1, 3, 5, 7)
-]
-
-# ==============================================================================
 # 3. BLOCK QUADRANT MODE LOOKUPS (2x2 Grid, Block Elements)
 # ==============================================================================
 # Mapping (bx, by) -> bit index 0..3
@@ -64,22 +55,81 @@ QUADRANT_CHARS = [
 # Fast character -> 4-bit bitmask reverse lookup
 QUADRANT_MAP = {char: mask for mask, char in enumerate(QUADRANT_CHARS)}
 
-# Map 8-bit octant mask (0..255) to universally supported block/quadrant characters
-OCTANT_CHARS = [' '] * 256
-for mask in range(256):
-    q_tl = 1 if (mask & 0x05) else 0
-    q_tr = 1 if (mask & 0x0A) else 0
-    q_bl = 1 if (mask & 0x50) else 0
-    q_br = 1 if (mask & 0xA0) else 0
-    quad_idx = q_tl | (q_tr << 1) | (q_bl << 2) | (q_br << 3)
-    OCTANT_CHARS[mask] = QUADRANT_CHARS[quad_idx]
+# ==============================================================================
+# 2. BLOCK OCTANT MODE LOOKUPS (2x4 Grid, Symbols for Legacy Computing)
+# ==============================================================================
+OCTANT_BIT_MASKS = [
+    [0x01, 0x04, 0x10, 0x40],  # bx = 0 (Left column:  Octants 1, 3, 5, 7)
+    [0x02, 0x08, 0x20, 0x80]   # bx = 1 (Right column: Octants 2, 4, 6, 8)
+]
 
-OCTANT_MAP = {char: mask for mask, char in enumerate(OCTANT_CHARS)}
-# Index U+1CD00 and U+1CC00 codepoint ranges for full reverse lookup compatibility
-for mask in range(1, 255):
-    OCTANT_MAP[chr(0x1CD00 + mask - 1)] = mask
-    OCTANT_MAP[chr(0x1CD00 + mask)] = mask
-    OCTANT_MAP[chr(0x1CC00 + mask)] = mask
+# Explicit overrides for all 26 unified/legacy fallback combinations
+OVERRIDES = {
+    # 16 Quadrant Fallbacks
+    0x00: QUADRANT_CHARS[0],   # Space
+    0x05: QUADRANT_CHARS[1],   # Quadrant Upper Left
+    0x0A: QUADRANT_CHARS[2],   # Quadrant Upper Right
+    0x0F: QUADRANT_CHARS[3],   # Upper Half Block
+    0x50: QUADRANT_CHARS[4],   # Quadrant Lower Left
+    0x55: QUADRANT_CHARS[5],   # Left Half Block
+    0x5A: QUADRANT_CHARS[6],   # Quadrant Upper Right + Lower Left
+    0x5F: QUADRANT_CHARS[7],   # Quadrant Upper Half + Lower Left
+    0xA0: QUADRANT_CHARS[8],   # Quadrant Lower Right
+    0xA5: QUADRANT_CHARS[9],   # Quadrant Upper Left + Lower Right
+    0xAA: QUADRANT_CHARS[10],  # Right Half Block
+    0xAF: QUADRANT_CHARS[11],  # Quadrant Upper Half + Lower Right
+    0xF0: QUADRANT_CHARS[12],  # Lower Half Block
+    0xF5: QUADRANT_CHARS[13],  # Quadrant Upper Left + Lower Half
+    0xFA: QUADRANT_CHARS[14],  # Quadrant Upper Right + Lower Half
+    0xFF: QUADRANT_CHARS[15],  # Full Block
+
+    # 10 Non-Quadrant Horizontal Cuts & Corner Octants
+    0x01: '\U0001CEA8',  # Octant 1
+    0x02: '\U0001CEAB',  # Octant 2
+    0x03: '\U0001FB82',    # Octants 1, 2
+    #0x07: '\U0001FB85',    # Octants 1, 2, 3, 4, 5, 6 (Upper 3/4 Block)
+    #0x30: '\U0001FC80',    # Octants 5, 6
+    #0x3F: '\U0001FB88',    # Octants 1, 2, 3, 4, 5, 6
+    #0x40: '\U0001CEAC',  # Octant 7
+    #0x80: '\U0001CEAF',  # Octant 8
+    0xC0: '\u2582',    # Octants 7, 8
+    0xFC: '\U0001FB83',    # Octants 3, 4, 5, 6, 7, 8
+    #0x0F: '\u2580'
+}
+
+def _build_octant_table():
+    octant_chars = [' '] * 256
+    
+    # 1. Fill unified overrides
+    for mask, char in OVERRIDES.items():
+        octant_chars[mask] = char
+
+    # 2. Build Unicode 16.0 octant ordering sequence algorithmically
+    #    Unicode sequences octants by highest-active-bit first.
+    unassigned = []
+    for mask in range(256):
+        if mask not in OVERRIDES:
+            # Generate active octants list in standard order (e.g. [1, 2, 6])
+            active = [i + 1 for i in range(8) if (mask & (1 << i))]
+            # Key sorts by: (highest_octant, rest_of_octants_as_string)
+            sort_key = (active[-1], "".join(str(d) for d in active[:-1]))
+            unassigned.append((sort_key, mask))
+
+    # Sort to match U+1CD00 sequence
+    unassigned.sort(key=lambda x: x[0])
+
+    # Assign U+1CD00..U+1CDE5
+    for idx, (_, mask) in enumerate(unassigned):
+        octant_chars[mask] = chr(0x1CD00 + idx)
+
+    # 3. Build two-way map (ensuring overrides map back correctly)
+    octant_map = {char: mask for mask, char in enumerate(octant_chars)}
+    for mask, char in OVERRIDES.items():
+        octant_map[char] = mask
+
+    return octant_chars, octant_map
+
+OCTANT_CHARS, OCTANT_MAP = _build_octant_table()
 
 # ==============================================================================
 # HELPERS & PLOTTING FUNCTIONS
@@ -254,7 +304,7 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool, mod
         # Match pixel state to target_state
         if spixel_get(fb, x, y, mode=mode) == target_state:
             spixel_plot(fb, x, y, state, mode=mode)
-            
+
             # Push 4-way adjacent pixels
             stack.append((x + 1, y))
             stack.append((x - 1, y))
