@@ -60,3 +60,37 @@ def test_ansi_parser_numeric_music_sequences():
 
         cmds = scr.pop_music_queue()
         assert cmds == ["440;880"]
+
+
+def test_screen_feed_and_print_auto_music_parsing():
+    """
+    Verify that screen.feed() and screen.print() both automatically parse embedded ANSI music
+    escape sequences directly into screen.music_queue while rendering surrounding text.
+    """
+    for use_bin in (False, True):
+        scr = Screen(width=40, height=5, use_binary=use_bin)
+
+        # Test screen.feed()
+        scr.feed("\x1b[M T120 O3 L4 C D E F G A B C\x0eWELCOME TO THE BBS!\r\n")
+        assert len(scr.music_queue) == 1
+        assert scr.music_queue[0] == "T120 O3 L4 C D E F G A B C"
+
+        # Pop music queue
+        popped = scr.pop_music_queue()
+        assert popped == ["T120 O3 L4 C D E F G A B C"]
+        assert scr.music_queue == []
+
+        # Verify surrounding text rendered into screen buffer
+        assert scr.get_cell(0, 0).char == "W"
+        assert scr.get_cell(1, 0).char == "E"
+
+        # Test screen.print() alias
+        scr.print("\x1bN T180 O4 L8 C# D# E#\x0ePLAYING MUSIC NOW\r\n")
+        assert len(scr.music_queue) == 1
+        assert scr.music_queue[0] == "T180 O4 L8 C# D# E#"
+
+        popped_2 = scr.pop_music_queue()
+        assert popped_2 == ["T180 O4 L8 C# D# E#"]
+        assert scr.music_queue == []
+        assert scr.get_cell(0, 1).char == "P"
+
