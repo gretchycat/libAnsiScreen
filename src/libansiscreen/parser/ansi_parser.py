@@ -1,5 +1,6 @@
 # libansifb/ansi/parser.py
 
+import math
 from typing import List
 
 from ..cell import (
@@ -18,6 +19,7 @@ from ..color.palette import (
     create_ansi_256_palette,
 )
 from ..framebuffer import frameBuffer
+from .image_parser import parse_sixel_data, parse_iterm2_data, parse_kitty_data
 
 # ----------------------------------------------------------------------
 # Palettes (facts, not policy)
@@ -76,6 +78,9 @@ class ANSIParser():
     CHARSET_G3 = 6
     SZ = 7
     MUSIC = 8
+    DCS = 9
+    OSC = 10
+    APC = 11
 
     def __init__(self, fb: frameBuffer):
         self.fb = fb
@@ -83,6 +88,7 @@ class ANSIParser():
         self.params: List[int] = []
         self.param_buf: str = ""
         self.music_buf: str = ""
+        self.seq_buf: str = ""
 
     # ------------------------------------------------------------------
     # Public API
@@ -108,6 +114,12 @@ class ANSIParser():
             self._state_csi(ch)
         elif self.state == self.MUSIC:
             self._state_music(ch)
+        elif self.state == self.DCS:
+            self._state_dcs(ch)
+        elif self.state == self.OSC:
+            self._state_osc(ch)
+        elif self.state == self.APC:
+            self._state_apc(ch)
 
     # ------------------------------------------------------------------
     # TEXT
@@ -133,9 +145,19 @@ class ANSIParser():
             self.params.clear()
             self.param_buf = ""
             self.music_buf = ""
+            self.seq_buf = ""
         elif ch in ("N", "M"):
             self.state = self.MUSIC
             self.music_buf = ""
+        elif ch == "P":  # DCS (Sixel)
+            self.state = self.DCS
+            self.seq_buf = ""
+        elif ch == "]":  # OSC (iTerm2)
+            self.state = self.OSC
+            self.seq_buf = ""
+        elif ch == "_":  # APC (Kitty)
+            self.state = self.APC
+            self.seq_buf = ""
         elif ch == "7":  # DECSC
             self.fb.cursor_save()
             self.state = self.TEXT
@@ -145,6 +167,72 @@ class ANSIParser():
         else:
             # Unsupported ESC sequence
             self.state = self.TEXT
+
+    def _state_dcs(self, ch: str) -> None:
+        if ch in ("\x07", "\x1b"):
+            self._finish_dcs()
+            self.state = self.ESC if ch == "\x1b" else self.TEXT
+        elif ch == "\\" and self.seq_buf.endswith("\x1b"):
+            self.seq_buf = self.seq_buf[:-1]
+            self._finish_dcs()
+            self.state = self.TEXT
+        else:
+            self.seq_buf += ch
+
+    def _finish_dcs(self) -> None:
+        img, meta = parse_sixel_data(self.seq_buf)
+        if img is not None and hasattr(img, "width"):
+            w_cells = max(1, math.ceil(img.width / 8))
+            h_cells = max(1, math.ceil(img.height / 16))
+            self.fb.put_image(
+                self.fb.cursor.x, self.fb.cursor.y, img, width_cells=w_cells, height_cells=h_cells, metadata=meta
+            )
+
+    def _state_osc(self, ch: str) -> None:
+        if ch in ("\x07", "\x1b"):
+            self._finish_osc()
+            self.state = self.ESC if ch == "\x1b" else self.TEXT
+        elif ch == "\\" and self.seq_buf.endswith("\x1b"):
+            self.seq_buf = self.seq_buf[:-1]
+            self._finish_osc()
+            self.state = self.TEXT
+        else:
+            self.seq_buf += ch
+
+    def _finish_osc(self) -> None:
+        if "1337;" in self.seq_buf or "File=" in self.seq_buf:
+            img, meta = parse_iterm2_data(self.seq_buf)
+            if img is not None and hasattr(img, "width"):
+                w_cells = max(1, math.ceil(img.width / 8))
+                h_cells = max(1, math.ceil(img.height / 16))
+                self.fb.put_image(
+                    self.fb.cursor.x, self.fb.cursor.y, img, width_cells=w_cells, height_cells=h_cells, metadata=meta
+                )
+
+    def _state_apc(self, ch: str) -> None:
+        if ch in ("\x07", "\x1b"):
+            self._finish_apc()
+            self.state = self.ESC if ch == "\x1b" else self.TEXT
+        elif ch == "\\" and self.seq_buf.endswith("\x1b"):
+            self.seq_buf = self.seq_buf[:-1]
+            self._finish_apc()
+            self.state = self.TEXT
+        else:
+            self.seq_buf += ch
+
+    def _finish_apc(self) -> None:
+        if self.seq_buf.startswith("G") or self.seq_buf.startswith("_G"):
+            control_str = ""
+            payload = self.seq_buf
+            if ";" in self.seq_buf:
+                control_str, payload = self.seq_buf.split(";", 1)
+            img, meta = parse_kitty_data(control_str, payload)
+            if img is not None and hasattr(img, "width"):
+                w_cells = max(1, math.ceil(img.width / 8))
+                h_cells = max(1, math.ceil(img.height / 16))
+                self.fb.put_image(
+                    self.fb.cursor.x, self.fb.cursor.y, img, width_cells=w_cells, height_cells=h_cells, metadata=meta
+                )
 
     # ------------------------------------------------------------------
     # CSI
