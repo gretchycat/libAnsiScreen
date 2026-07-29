@@ -493,36 +493,45 @@ class frameBuffer:
     # Cursor Control (ANSI Semantics)
     # ------------------------------------------------------------------
     def cursor_goto(self, x: int, y: int) -> None:
+        self._pending_wrap = False
         self.cursor.x = self._clamp_x(x)
         self.cursor.y = max(0, y)
 
     def cursor_up(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.y = max(0, self.cursor.y - n)
 
     def cursor_down(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.y += n
 
     def cursor_forward(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.x = self._clamp_x(self.cursor.x + n)
 
     def cursor_back(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.x = self._clamp_x(self.cursor.x - n)
 
     def cursor_next_line(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.x = 0
         self.cursor.y += n
 
     def cursor_prev_line(self, n: int = 1) -> None:
+        self._pending_wrap = False
         self.cursor.x = 0
         self.cursor.y = max(0, self.cursor.y - n)
 
     def cursor_set_column(self, x: int) -> None:
+        self._pending_wrap = False
         self.cursor.x = self._clamp_x(x)
 
     def cursor_save(self) -> None:
         self.cursor.save()
 
     def cursor_restore(self) -> None:
+        self._pending_wrap = False
         self.cursor.restore()
         self.cursor.x = self._clamp_x(self.cursor.x)
 
@@ -684,6 +693,7 @@ class frameBuffer:
         Trims down buffer rows, resets cursor to (0,0), and sets each cell
         in the buffer to a space (' ') with current fg, bg, and attrs.
         """
+        self._pending_wrap = False
         old_height = max(1, self.height)
         self.cursor.reset()
         if self.use_binary:

@@ -252,4 +252,17 @@ def test_raw_mode_writing():
         assert cell_updated.attrs == ATTR_BOLD  # Preserved Bold
 
 
+def test_exact_width_pending_wrap():
+    for use_bin in (False, True):
+        fb = frameBuffer(width=10, height=2, use_binary=use_bin)
+        fb.put_text("1234567890")
+        assert fb._pending_wrap is True
 
+        fb.cursor_goto(0, 1)
+        assert fb._pending_wrap is False
+
+        fb.put_text("hello")
+        assert fb.get_cell(0, 1).char == "h"
+        assert fb.get_cell(4, 1).char == "o"
+        assert fb.cursor.y == 1
+        assert fb.cursor.x == 5
