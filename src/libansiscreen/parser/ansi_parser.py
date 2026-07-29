@@ -75,12 +75,14 @@ class ANSIParser():
     CHARSET_G2 = 5
     CHARSET_G3 = 6
     SZ = 7
+    MUSIC = 8
 
     def __init__(self, fb: frameBuffer):
         self.fb = fb
         self.state = self.TEXT
         self.params: List[int] = []
         self.param_buf: str = ""
+        self.music_buf: str = ""
 
     # ------------------------------------------------------------------
     # Public API
@@ -104,6 +106,8 @@ class ANSIParser():
             self._state_esc(ch)
         elif self.state == self.CSI:
             self._state_csi(ch)
+        elif self.state == self.MUSIC:
+            self._state_music(ch)
 
     # ------------------------------------------------------------------
     # TEXT
@@ -128,17 +132,16 @@ class ANSIParser():
             self.state = self.CSI
             self.params.clear()
             self.param_buf = ""
+            self.music_buf = ""
+        elif ch in ("N", "M"):
+            self.state = self.MUSIC
+            self.music_buf = ""
         elif ch == "7":  # DECSC
             self.fb.cursor_save()
             self.state = self.TEXT
         elif ch == "8":  # DECRC
             self.fb.cursor_restore()
             self.state = self.TEXT
-        #elif ch =='(':
-        #elif ch ==')':
-        #elif ch =='*':
-        #elif ch =='+':
-        #elif ch =='#':
         else:
             # Unsupported ESC sequence
             self.state = self.TEXT
@@ -152,10 +155,27 @@ class ANSIParser():
             self.param_buf += ch
         elif ch == ";":
             self._flush_param()
+        elif not self.param_buf and not self.params and ch in ("N", "M"):
+            self.state = self.MUSIC
+            self.music_buf = ""
         else:
             self._flush_param()
             self._dispatch_csi(ch)
-            self.state = self.TEXT
+            if self.state == self.CSI:
+                self.state = self.TEXT
+
+    def _state_music(self, ch: str) -> None:
+        if ch in ("\x0e", "\x1b", "\n", "\r"):
+            music_cmd = self.music_buf.strip()
+            if music_cmd:
+                self.fb.add_music(music_cmd)
+            self.music_buf = ""
+            if ch == "\x1b":
+                self.state = self.ESC
+            else:
+                self.state = self.TEXT
+        else:
+            self.music_buf += ch
 
     def _flush_param(self) -> None:
         if self.param_buf:
@@ -199,6 +219,11 @@ class ANSIParser():
 
         elif final == "m":  # SGR
             self._handle_sgr(p)
+
+        elif final in ("N", "M"):  # ANSI Music / PLAY
+            music_str = ";".join(str(val) for val in p if val)
+            if music_str:
+                self.fb.add_music(music_str)
 
     # ------------------------------------------------------------------
     # SGR handling

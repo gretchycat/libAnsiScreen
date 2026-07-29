@@ -225,6 +225,9 @@ class frameBuffer:
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
 
+        # ANSI Music Queue
+        self.music_queue: List[str] = []
+
         if self.use_binary:
             self._buffer: bytearray = bytearray()
             self._allocated_rows: int = 0
@@ -591,6 +594,30 @@ class frameBuffer:
         self.current_bg = DEFAULT_BG
         self.current_attrs = 0
         self._update_graphics_cache()
+
+    # ------------------------------------------------------------------
+    # ANSI Music Queue Operations
+    # ------------------------------------------------------------------
+    def add_music(self, music_cmd: str) -> None:
+        """
+        Appends an ANSI music command or PLAY instruction sequence to the music queue.
+        """
+        if music_cmd:
+            self.music_queue.append(music_cmd)
+
+    def pop_music_queue(self) -> List[str]:
+        """
+        Returns all queued music commands and clears the music queue.
+        """
+        queue = self.music_queue[:]
+        self.music_queue.clear()
+        return queue
+
+    def clear_music_queue(self) -> None:
+        """
+        Clears all queued music commands.
+        """
+        self.music_queue.clear()
 
     # ------------------------------------------------------------------
     # Writing Operations
