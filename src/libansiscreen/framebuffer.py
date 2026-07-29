@@ -418,8 +418,8 @@ class frameBuffer:
             y,
             Cell(
                 char=char,
-                fg=fg,
-                bg=bg,
+                fg=Color.set(fg),
+                bg=Color.set(bg),
                 attrs=attrs,
                 image=image,
             ),
@@ -549,7 +549,50 @@ class frameBuffer:
     # ------------------------------------------------------------------
     # Writing Operations
     # ------------------------------------------------------------------
-    def put_char(self, char: str) -> None:
+    def put_char(self, char: str, raw=False) -> None:
+        def cp437_char(char:str) -> str:
+            if len(char) != 1:
+                raise ValueError("put_char expects a single character: " + str(char))
+            CP437_LOW_GRAPHICS = [
+                " ",
+                "☺",
+                "☻",
+                "♥",
+                "♦",
+                "♣",
+                "♠",
+                "•",
+                "◘",
+                "○",
+                "◙",
+                "♂",
+                "♀",
+                "♪",
+                "♫",
+                "☼",
+                "►",
+                "◄",
+                "↕",
+                "‼",
+                "¶",
+                "§",
+                "▬",
+                "↨",
+                "↑",
+                "↓",
+                "→",
+                "←",
+                "∟",
+                "↔",
+                "▲",
+                "▼",
+            ]
+            i=ord(char)
+            if i<32:
+                char=CP437_LOW_GRAPHICS[i]
+            if i==127:
+                char="⌂"
+            return char
         if len(char) != 1:
             raise ValueError("put_char expects a single character: " + str(char))
 
@@ -586,24 +629,31 @@ class frameBuffer:
                 attrs=self.current_attrs,
             )
         else:
-            cell = Cell(
-                char=char,
-                fg=self.current_fg,
-                bg=self.current_bg,
-                attrs=self.current_attrs,
-            )
-            self._rows[self.cursor.y][self.cursor.x] = cell
+            if not raw:
+                cell = Cell(
+                    char=char,
+                    fg=self.current_fg,
+                    bg=self.current_bg,
+                    attrs=self.current_attrs,
+                )
+                self._rows[self.cursor.y][self.cursor.x] = cell
+            else:
+                c=self._rows[self.cursor.y][self.cursor.x]
+                if not c:
+                    c=Cell()
+                c.char=cp437_char(char)
+                self._rows[self.cursor.y][self.cursor.x] = c
 
         self._advance_cursor()
 
-    def put_text(self, text: str) -> None:
+    def put_text(self, text: str, raw=False) -> None:
         for ch in text:
-            if ch == "\n":
+            if ch == "\n" and not raw:
                 self.new_line()
-            elif ch == "\r":
+            elif ch == "\r" and not raw:
                 self.carriage_return()
             else:
-                self.put_char(ch)
+                self.put_char(ch,raw=raw)
 
     def _advance_cursor(self) -> None:
         self.cursor.x += 1
