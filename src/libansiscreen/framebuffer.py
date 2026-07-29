@@ -23,6 +23,23 @@ _ANSI16 = create_ansi_16_palette()
 DEFAULT_FG = _ANSI16.index_to_rgb(7)  # light gray
 DEFAULT_BG = _ANSI16.index_to_rgb(0)  # black
 
+CP437_LOW_GRAPHICS = [
+    " ", "☺", "☻", "♥", "♦", "♣", "♠", "•", "◘", "○", "◙", "♂", "♀", "♪", "♫", "☼",
+    "►", "◄", "↕", "‼", "¶", "§", "▬", "↨", "↑", "↓", "→", "←", "∟", "↔", "▲", "▼",
+]
+
+
+def cp437_char(char: str) -> str:
+    if len(char) != 1:
+        raise ValueError("put_char expects a single character: " + str(char))
+    i = ord(char)
+    if i < 32:
+        return CP437_LOW_GRAPHICS[i]
+    if i == 127:
+        return "⌂"
+    return char
+
+
 
 # ----------------------------------------------------------------------
 # Transparent Proxy Classes for fb.rows backward compatibility
@@ -177,8 +194,8 @@ class frameBuffer:
     """
     Lossless, document-oriented screen buffer.
 
-    - Defaults to object-based storage (list of lists of Cell objects) for maximum performance.
-    - Optional binary mode (`use_binary=True`) using packed cell structs for testing/benchmarking.
+    - Defaults to binary packed cell struct storage (`use_binary=True`) for high performance and low memory overhead.
+    - Optional object-based mode (`use_binary=False`) using lists of Cell objects.
     - Width is fixed unless explicitly resized.
     - Height grows dynamically.
     - Cursor represents logical write position.
@@ -189,7 +206,7 @@ class frameBuffer:
     # ------------------------------------------------------------------
     # Construction
     # ------------------------------------------------------------------
-    def __init__(self, width: int, height: int = 1, use_binary: bool = False) -> None:
+    def __init__(self, width: int, height: int = 1, use_binary: bool = True) -> None:
         if width <= 0:
             raise ValueError("Screen width must be > 0")
         self.width: int = width
@@ -549,50 +566,7 @@ class frameBuffer:
     # ------------------------------------------------------------------
     # Writing Operations
     # ------------------------------------------------------------------
-    def put_char(self, char: str, raw=False) -> None:
-        def cp437_char(char:str) -> str:
-            if len(char) != 1:
-                raise ValueError("put_char expects a single character: " + str(char))
-            CP437_LOW_GRAPHICS = [
-                " ",
-                "☺",
-                "☻",
-                "♥",
-                "♦",
-                "♣",
-                "♠",
-                "•",
-                "◘",
-                "○",
-                "◙",
-                "♂",
-                "♀",
-                "♪",
-                "♫",
-                "☼",
-                "►",
-                "◄",
-                "↕",
-                "‼",
-                "¶",
-                "§",
-                "▬",
-                "↨",
-                "↑",
-                "↓",
-                "→",
-                "←",
-                "∟",
-                "↔",
-                "▲",
-                "▼",
-            ]
-            i=ord(char)
-            if i<32:
-                char=CP437_LOW_GRAPHICS[i]
-            if i==127:
-                char="⌂"
-            return char
+    def put_char(self, char: str, raw: bool = False) -> None:
         if len(char) != 1:
             raise ValueError("put_char expects a single character: " + str(char))
 
@@ -602,6 +576,8 @@ class frameBuffer:
             self.cursor.y += 1
 
         self._ensure_row(self.cursor.y)
+
+        char_to_put = cp437_char(char) if raw else char
 
         if self.use_binary:
             offset = self._cell_offset(self.cursor.x, self.cursor.y)
@@ -617,7 +593,7 @@ class frameBuffer:
             pack_cell_fields(
                 self._buffer,
                 offset,
-                codepoint_or_imgid=ord(char),
+                codepoint_or_imgid=ord(char_to_put),
                 fg_r=fg_r,
                 fg_g=fg_g,
                 fg_b=fg_b,
@@ -629,20 +605,13 @@ class frameBuffer:
                 attrs=self.current_attrs,
             )
         else:
-            if not raw:
-                cell = Cell(
-                    char=char,
-                    fg=self.current_fg,
-                    bg=self.current_bg,
-                    attrs=self.current_attrs,
-                )
-                self._rows[self.cursor.y][self.cursor.x] = cell
-            else:
-                c=self._rows[self.cursor.y][self.cursor.x]
-                if not c:
-                    c=Cell()
-                c.char=cp437_char(char)
-                self._rows[self.cursor.y][self.cursor.x] = c
+            cell = Cell(
+                char=char_to_put,
+                fg=self.current_fg,
+                bg=self.current_bg,
+                attrs=self.current_attrs,
+            )
+            self._rows[self.cursor.y][self.cursor.x] = cell
 
         self._advance_cursor()
 

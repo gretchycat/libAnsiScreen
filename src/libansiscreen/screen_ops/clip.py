@@ -161,6 +161,38 @@ def paste(
 
     if dst.use_binary and src.use_binary:
         transparent_cps = {ord(c) for c in transparent_char if len(c) == 1}
+        has_transparency = bool(transparent_cps or transparent_fg or transparent_bg or transparent_attrs)
+
+        min_sx = max(0, -dst_x)
+        min_dx = max(0, dst_x)
+        cols_to_copy = min(max_w - min_sx, dst.width - min_dx)
+
+        if cols_to_copy > 0:
+            end_y = dst_y + max_h - 1
+            if end_y >= 0:
+                dst._ensure_row(end_y)
+
+                if not has_transparency:
+                    src_buf = src._buffer
+                    # Fast C-level validation of full fg/bg color presence and non-null status
+                    if 0 not in src_buf[7::CELL_SIZE] and 0 not in src_buf[11::CELL_SIZE] and 0x80 not in src_buf[15::CELL_SIZE]:
+                        # Ultra-fast single contiguous block copy (when pasting full row widths)
+                        if min_sx == 0 and min_dx == 0 and cols_to_copy == src.width and cols_to_copy == dst.width and dst_y >= 0:
+                            dst_start = (dst_y * dst.width) * CELL_SIZE
+                            total_bytes = max_h * src.width * CELL_SIZE
+                            dst._buffer[dst_start : dst_start + total_bytes] = src_buf[0 : total_bytes]
+                            return
+
+                        # Fast row-by-row slice copy
+                        row_bytes = cols_to_copy * CELL_SIZE
+                        for sy in range(max_h):
+                            dy = dst_y + sy
+                            if dy < 0:
+                                continue
+                            src_start = (sy * src.width + min_sx) * CELL_SIZE
+                            dst_start = (dy * dst.width + min_dx) * CELL_SIZE
+                            dst._buffer[dst_start : dst_start + row_bytes] = src_buf[src_start : src_start + row_bytes]
+                        return
 
         for sy in range(max_h):
             dy = dst_y + sy
@@ -168,10 +200,29 @@ def paste(
                 continue
             dst._ensure_row(dy)
 
-            for sx in range(max_w):
-                dx = dst_x + sx
-                if dx < 0 or dx >= dst.width:
+            if cols_to_copy <= 0:
+                continue
+
+            if not has_transparency:
+                src_start = (sy * src.width + min_sx) * CELL_SIZE
+                dst_start = (dy * dst.width + min_dx) * CELL_SIZE
+                row_bytes = cols_to_copy * CELL_SIZE
+                src_chunk = src._buffer[src_start : src_start + row_bytes]
+
+                can_fast_copy = True
+                b = memoryview(src_chunk)
+                for i in range(0, row_bytes, CELL_SIZE):
+                    if not (b[i + 7] & FLAG_COLOR_SET and b[i + 11] & FLAG_COLOR_SET and not (b[i + 15] & 0x80)):
+                        can_fast_copy = False
+                        break
+
+                if can_fast_copy:
+                    dst._buffer[dst_start : dst_start + row_bytes] = src_chunk
                     continue
+
+            for dx_idx in range(cols_to_copy):
+                sx = min_sx + dx_idx
+                dx = min_dx + dx_idx
 
                 src_off = (sy * src.width + sx) * CELL_SIZE
                 dst_off = (dy * dst.width + dx) * CELL_SIZE
@@ -215,7 +266,7 @@ def paste(
                     d_br, d_bg, d_bb, d_bf,
                     d_attrs, d_tile
                 )
-    else:
+    elif not dst.use_binary and not src.use_binary:
         for sy in range(max_h):
             dy = dst_y + sy
             if dy < 0:
@@ -265,6 +316,55 @@ def paste(
                     image=new_img,
                     tile_x=sc.tile_x,
                     tile_y=sc.tile_y,
+                )
+    else:
+        for sy in range(max_h):
+            dy = dst_y + sy
+            if dy < 0:
+                continue
+            dst._ensure_row(dy)
+
+            for sx in range(max_w):
+                dx = dst_x + sx
+                if dx < 0 or dx >= dst.width:
+                    continue
+
+                sc = src.get_cell(sx, sy)
+                if sc is None:
+                    continue
+
+                dc = dst.get_cell(dx, dy) or Cell()
+
+                new_char = dc.char
+                if sc.char is not None and sc.char not in transparent_char:
+                    new_char = sc.char
+
+                new_fg = dc.fg
+                if not transparent_fg and sc.fg is not None:
+                    new_fg = sc.fg
+
+                new_bg = dc.bg
+                if not transparent_bg and sc.bg is not None:
+                    new_bg = sc.bg
+
+                new_attrs = dc.attrs
+                if not transparent_attrs:
+                    new_attrs = sc.attrs
+
+                new_img = sc.image if sc.image is not None else dc.image
+
+                dst.set_cell(
+                    dx,
+                    dy,
+                    Cell(
+                        char=new_char,
+                        fg=new_fg,
+                        bg=new_bg,
+                        attrs=new_attrs,
+                        image=new_img,
+                        tile_x=sc.tile_x,
+                        tile_y=sc.tile_y,
+                    ),
                 )
 
 

@@ -176,12 +176,12 @@ def test_resize():
 
 def test_use_binary_mode_toggle():
     fb_default = frameBuffer(width=10, height=5)
-    assert fb_default.use_binary is False
-    assert hasattr(fb_default, "_rows")
+    assert fb_default.use_binary is True
+    assert hasattr(fb_default, "_buffer")
 
-    fb_binary = frameBuffer(width=10, height=5, use_binary=True)
-    assert fb_binary.use_binary is True
-    assert hasattr(fb_binary, "buffer")
+    fb_object = frameBuffer(width=10, height=5, use_binary=False)
+    assert fb_object.use_binary is False
+    assert hasattr(fb_object, "_rows")
 
 
 def test_binary_vs_object_framebuffer_parity():
@@ -203,4 +203,37 @@ def test_binary_vs_object_framebuffer_parity():
         assert fb.width == 5
         assert fb.height >= 2
         assert fb.get_cell(0, 0).char == "X"
+
+
+def test_raw_mode_writing():
+    for use_bin in (False, True):
+        fb = frameBuffer(width=10, height=5, use_binary=use_bin)
+
+        # Test put_char raw mode for CP437 low graphics mapping
+        fb.cursor_goto(0, 0)
+        fb.put_char("\x01", raw=True)  # ASCII 1 -> ☺
+        fb.put_char("\x03", raw=True)  # ASCII 3 -> ♥
+        fb.put_char("\x0a", raw=True)  # ASCII 10 (\n) -> ◙
+        fb.put_char("\x0d", raw=True)  # ASCII 13 (\r) -> ♪
+        fb.put_char("\x7f", raw=True)  # ASCII 127 -> ⌂
+
+        assert fb.get_cell(0, 0).char == "☺"
+        assert fb.get_cell(1, 0).char == "♥"
+        assert fb.get_cell(2, 0).char == "◙"
+        assert fb.get_cell(3, 0).char == "♪"
+        assert fb.get_cell(4, 0).char == "⌂"
+        assert fb.cursor.x == 5
+        assert fb.cursor.y == 0
+
+        # Test put_text raw mode: newlines and carriage returns are written as characters without cursor line wrapping
+        fb.cursor_goto(0, 1)
+        fb.put_text("A\nB\rC", raw=True)
+        assert fb.get_cell(0, 1).char == "A"
+        assert fb.get_cell(1, 1).char == "◙"
+        assert fb.get_cell(2, 1).char == "B"
+        assert fb.get_cell(3, 1).char == "♪"
+        assert fb.get_cell(4, 1).char == "C"
+        assert fb.cursor.x == 5
+        assert fb.cursor.y == 1
+
 
