@@ -611,15 +611,23 @@ class frameBuffer:
         if self.use_binary:
             offset = self._cell_offset(self.cursor.x, self.cursor.y)
             struct.pack_into("<I", self._buffer, offset, ord(char_to_put))
-            self._buffer[offset + 4 : offset + 16] = self._cached_graphics_bytes
+            if not raw:
+                self._buffer[offset + 4 : offset + 16] = self._cached_graphics_bytes
         else:
-            cell = Cell(
-                char=char_to_put,
-                fg=self.current_fg,
-                bg=self.current_bg,
-                attrs=self.current_attrs,
-            )
-            self._rows[self.cursor.y][self.cursor.x] = cell
+            if not raw:
+                cell = Cell(
+                    char=char_to_put,
+                    fg=self.current_fg,
+                    bg=self.current_bg,
+                    attrs=self.current_attrs,
+                )
+                self._rows[self.cursor.y][self.cursor.x] = cell
+            else:
+                c = self._rows[self.cursor.y][self.cursor.x]
+                if c is None:
+                    c = Cell()
+                c.char = char_to_put
+                self._rows[self.cursor.y][self.cursor.x] = c
 
         self._advance_cursor()
 

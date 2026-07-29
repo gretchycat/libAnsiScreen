@@ -236,4 +236,20 @@ def test_raw_mode_writing():
         assert fb.cursor.x == 5
         assert fb.cursor.y == 1
 
+        # Test raw mode preserves existing cell colors and attributes
+        fb.cursor_goto(0, 2)
+        fb.put_cell(0, 2, char="A", fg=Color(255, 0, 0), bg=Color(0, 0, 255), attrs=ATTR_BOLD)
+        fb.set_foreground(Color(0, 255, 0))  # Green
+        fb.set_background(Color(255, 255, 0))  # Yellow
+        fb.set_attrs(ATTR_ITALIC)
+        fb.cursor_goto(0, 2)
+        fb.put_char("Z", raw=True)
+
+        cell_updated = fb.get_cell(0, 2)
+        assert cell_updated.char == "Z"
+        assert cell_updated.fg == Color(255, 0, 0)  # Preserved Red
+        assert cell_updated.bg == Color(0, 0, 255)  # Preserved Blue
+        assert cell_updated.attrs == ATTR_BOLD  # Preserved Bold
+
+
 
