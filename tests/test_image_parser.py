@@ -14,7 +14,7 @@ def create_test_base64_image(width=16, height=16, color=(255, 0, 0)):
 
 
 def test_parse_sixel_sequence():
-    """
+    r"""
     Verify that incoming Sixel DCS escape sequences (\x1bPq...\x1b\) are decoded,
     registered into ImageRegistry, and stamped onto screen cells.
     """
@@ -37,7 +37,7 @@ def test_parse_sixel_sequence():
 
 
 def test_parse_iterm2_sequence():
-    """
+    r"""
     Verify that incoming iTerm2 OSC escape sequences (\x1b]1337;File=...:<base64>\x07)
     are decoded, registered into ImageRegistry, and stamped onto screen cells.
     """
@@ -55,7 +55,7 @@ def test_parse_iterm2_sequence():
 
 
 def test_parse_kitty_sequence():
-    """
+    r"""
     Verify that incoming Kitty APC escape sequences (\x1b_Ga=T...;<base64>\x1b\)
     are decoded, registered into ImageRegistry, and stamped onto screen cells.
     """
