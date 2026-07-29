@@ -1,5 +1,6 @@
 # libansiscreen/framebuffer.py
 
+import struct
 from typing import Any, Dict, List, Optional, Iterator
 from .cell import Cell
 from .cursor import Cursor
@@ -218,6 +219,8 @@ class frameBuffer:
         self.current_bg: Optional[Color] = DEFAULT_BG
         self.current_attrs: int = 0
         self._pending_wrap: bool = False
+        self._cached_graphics_bytes: bytes = b""
+        self._update_graphics_cache()
 
         # Image Registry for Terminal Graphics (Kitty, Sixel, etc.)
         self.image_registry: ImageRegistry = ImageRegistry()
@@ -543,25 +546,51 @@ class frameBuffer:
     # ------------------------------------------------------------------
     # Graphics State (SGR-like)
     # ------------------------------------------------------------------
+    def _update_graphics_cache(self) -> None:
+        fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
+        if self.current_fg is not None:
+            fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
+
+        bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
+        if self.current_bg is not None:
+            bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
+
+        fg_flags = 1 if fg_set else 0
+        bg_flags = 1 if bg_set else 0
+
+        self._cached_graphics_bytes = struct.pack(
+            "<BBBBBBBBHH",
+            fg_r, fg_g, fg_b, fg_flags,
+            bg_r, bg_g, bg_b, bg_flags,
+            self.current_attrs,
+            0,
+        )
+
     def set_foreground(self, color: Color) -> None:
         self.current_fg = Color.set(color)
+        self._update_graphics_cache()
 
     def set_background(self, color: Color) -> None:
         self.current_bg = Color.set(color)
+        self._update_graphics_cache()
 
     def set_attrs(self, attrs: int) -> None:
         self.current_attrs = attrs
+        self._update_graphics_cache()
 
     def add_attrs(self, attrs: int) -> None:
         self.current_attrs |= attrs
+        self._update_graphics_cache()
 
     def clear_attrs(self, attrs: int) -> None:
         self.current_attrs &= ~attrs
+        self._update_graphics_cache()
 
     def reset_graphics(self) -> None:
         self.current_fg = DEFAULT_FG
         self.current_bg = DEFAULT_BG
         self.current_attrs = 0
+        self._update_graphics_cache()
 
     # ------------------------------------------------------------------
     # Writing Operations
@@ -581,29 +610,8 @@ class frameBuffer:
 
         if self.use_binary:
             offset = self._cell_offset(self.cursor.x, self.cursor.y)
-
-            fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
-            if self.current_fg is not None:
-                fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
-
-            bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
-            if self.current_bg is not None:
-                bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
-
-            pack_cell_fields(
-                self._buffer,
-                offset,
-                codepoint_or_imgid=ord(char_to_put),
-                fg_r=fg_r,
-                fg_g=fg_g,
-                fg_b=fg_b,
-                fg_set=fg_set,
-                bg_r=bg_r,
-                bg_g=bg_g,
-                bg_b=bg_b,
-                bg_set=bg_set,
-                attrs=self.current_attrs,
-            )
+            struct.pack_into("<I", self._buffer, offset, ord(char_to_put))
+            self._buffer[offset + 4 : offset + 16] = self._cached_graphics_bytes
         else:
             cell = Cell(
                 char=char_to_put,
@@ -622,7 +630,7 @@ class frameBuffer:
             elif ch == "\r" and not raw:
                 self.carriage_return()
             else:
-                self.put_char(ch,raw=raw)
+                self.put_char(ch, raw=raw)
 
     def _advance_cursor(self) -> None:
         self.cursor.x += 1
@@ -647,14 +655,9 @@ class frameBuffer:
             self._buffer.clear()
             self._allocated_rows = 0
 
-            space_cell = Cell(
-                char=" ",
-                fg=self.current_fg,
-                bg=self.current_bg,
-                attrs=self.current_attrs,
-            )
             space_cell_bytes = bytearray(CELL_SIZE)
-            pack_cell(space_cell_bytes, 0, space_cell)
+            struct.pack_into("<I", space_cell_bytes, 0, 32)
+            space_cell_bytes[4:16] = self._cached_graphics_bytes
 
             self._buffer.extend(bytes(space_cell_bytes) * (old_height * self.width))
             self._allocated_rows = old_height
