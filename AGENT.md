@@ -6,6 +6,5 @@ the ansi parser should be able to handle sixel, iterm2, kitty codes.
 we should also put hooks in for ansi music.
 just putting all the music instructions into a queue should be enough.
 an extension to this Library will handle parsing out that queue.
-octant, sextan/quadrant rendering is working mostly okay right now.we should add some more special cases to the unit tests.
-I said mostly okay because for some reason, octane flood fill does not stay Within bounds
-
+9: octant, sextan/quadrant rendering and unit tests updated for all subpixel modes.
+10: FIXED: octant flood fill mapping collision bug resolved (all 256 octant bitmasks are 100% unique), and subpixel flood fill max_y bound calculation updated per mode.

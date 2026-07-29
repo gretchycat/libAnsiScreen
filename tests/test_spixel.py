@@ -98,3 +98,47 @@ def test_sextant_bitmask_exact_mappings():
             spixel_plot(scr, sub_x, sub_y, state=True, mode=MODE_SEXTANT)
 
     assert scr.get_cell(0, 0).char == "█"
+
+
+def test_octant_flood_fill_boundary_containment():
+    """
+    Verify that octant flood fill stays strictly within an enclosed boundary
+    and does not leak to surrounding subpixels or cause character grid corruption.
+    """
+    for mode in [MODE_OCTANT, MODE_QUADRANT, MODE_SEXTANT, MODE_BRAILLE]:
+        scr = Screen(width=10, height=10)
+        scr.cls()
+
+        # Draw an enclosed subpixel rectangle boundary
+        spixel_rectangle(scr, 2, 2, 8, 8, state=True, fill=False, mode=mode)
+
+        # Flood fill inside the boundary at seed (5, 5)
+        spixel_flood_fill(scr, 5, 5, state=True, mode=mode)
+
+        # Assert subpixels inside the boundary are True
+        for y in range(3, 8):
+            for x in range(3, 8):
+                assert spixel_get(scr, x, y, mode=mode) is True
+
+        # Assert boundary subpixels are True
+        for x in range(2, 9):
+            assert spixel_get(scr, x, 2, mode=mode) is True
+            assert spixel_get(scr, x, 8, mode=mode) is True
+
+        # Assert subpixels outside the boundary remain False (no leakage!)
+        assert spixel_get(scr, 0, 0, mode=mode) is False
+        assert spixel_get(scr, 1, 1, mode=mode) is False
+        assert spixel_get(scr, 9, 9, mode=mode) is False
+
+
+def test_octant_all_256_unique_mappings():
+    """
+    Verify that all 256 octant character bitmasks map to 256 unique characters,
+    preventing lookup collisions during subpixel plotting.
+    """
+    from libansiscreen.screen_ops.spixel import OCTANT_CHARS, OCTANT_MAP
+
+    assert len(OCTANT_CHARS) == 256
+    assert len(set(OCTANT_CHARS)) == 256
+    assert len(OCTANT_MAP) == 256
+

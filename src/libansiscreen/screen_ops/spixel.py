@@ -218,9 +218,14 @@ def spixel_flood_fill(fb: frameBuffer, x_seed: int, y_seed: int, state:bool, mod
     4-way stack-based flood fill on the virtual octant pixel grid.
     Replaces contiguous pixels matching the state at (x_seed, y_seed) with `state`.
     """
-    # Max dimensions in virtual octant pixels (2 horizontal, 4 vertical per cell)
+    # Max dimensions in virtual subpixels depending on mode
     max_x = fb.width * 2
-    max_y = fb.height * 4
+    if mode in [MODE_BRAILLE, MODE_OCTANT]:
+        max_y = fb.height * 4
+    elif mode == MODE_SEXTANT:
+        max_y = fb.height * 3
+    else:
+        max_y = fb.height * 2
 
     # Seed bounds check
     if not (0 <= x_seed < max_x and 0 <= y_seed < max_y):
