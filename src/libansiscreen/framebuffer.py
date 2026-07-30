@@ -309,15 +309,16 @@ class frameBuffer:
     def _cell_offset(self, x: int, y: int) -> int:
         return (y * self.width + x) * CELL_SIZE
 
-    def _ensure_row(self, y: int) -> None:
+    def _ensure_row(self, y: int, space_fill: bool = True) -> None:
         """Ensure row y exists in buffer."""
+        fill_char = " " if space_fill else None
         if self.use_binary:
             if y >= self._allocated_rows:
                 target_rows = y + 1
                 additional_rows = target_rows - self._allocated_rows
 
                 default_cell = Cell(
-                    char=None,
+                    char=fill_char,
                     fg=self.current_fg,
                     bg=self.current_bg,
                     attrs=self.current_attrs,
@@ -329,7 +330,7 @@ class frameBuffer:
                 self._allocated_rows = target_rows
         else:
             tpl = Cell(
-                char=None,
+                char=fill_char,
                 fg=self.current_fg,
                 bg=self.current_bg,
                 attrs=self.current_attrs,
@@ -504,6 +505,7 @@ class frameBuffer:
     def cursor_down(self, n: int = 1) -> None:
         self._pending_wrap = False
         self.cursor.y += n
+        self._ensure_row(self.cursor.y, space_fill=True)
 
     def cursor_forward(self, n: int = 1) -> None:
         self._pending_wrap = False
@@ -517,6 +519,7 @@ class frameBuffer:
         self._pending_wrap = False
         self.cursor.x = 0
         self.cursor.y += n
+        self._ensure_row(self.cursor.y, space_fill=True)
 
     def cursor_prev_line(self, n: int = 1) -> None:
         self._pending_wrap = False
@@ -549,11 +552,13 @@ class frameBuffer:
             self.cursor.y += 1
         else:
             self.cursor.y += 1
+        self._ensure_row(self.cursor.y, space_fill=True)
 
     def new_line(self) -> None:
         self._pending_wrap = False
         self.cursor.x = 0
         self.cursor.y += 1
+        self._ensure_row(self.cursor.y, space_fill=True)
 
     # ------------------------------------------------------------------
     # Graphics State (SGR-like)
@@ -640,7 +645,7 @@ class frameBuffer:
             self.cursor.x = 0
             self.cursor.y += 1
 
-        self._ensure_row(self.cursor.y)
+        self._ensure_row(self.cursor.y, space_fill=True)
 
         char_to_put = cp437_char(char) if raw else char
 

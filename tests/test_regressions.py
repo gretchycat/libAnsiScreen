@@ -29,8 +29,8 @@ def test_cls_row_trimming_and_space_fill():
     assert screen.cursor.x == 0
     assert screen.cursor.y == 0
 
-    # 2. Buffer trimmed down to old height (10)
-    assert screen.height == 10
+    # 2. Buffer trimmed down to old height (11)
+    assert screen.height == 11
 
     # 3. Each cell is filled with space (' ') and active fg/bg
     for y in range(screen.height):
@@ -198,4 +198,39 @@ def test_clear_to_end_of_screen_space_fill(use_binary: bool):
             assert cell is not None
             assert cell.char == " "
             assert cell.fg == custom_fg
+
+
+@pytest.mark.parametrize("use_binary", [True, False])
+def test_row_created_during_print_or_feed_is_filled_with_spaces(use_binary: bool):
+    """
+    Test that when a row is created during a print or feed operation,
+    unwritten cells on that newly allocated row are filled with spaces.
+    """
+    screen = Screen(width=10, height=1, use_binary=use_binary)
+
+    # Print short text followed by newline, creating row 1
+    screen.put_text("A\nB")
+    assert screen.height == 2
+
+    # Row 0: 'A' at (0, 0)
+    assert screen.get_cell(0, 0).char == "A"
+    # Row 1: 'B' at (0, 1), and remaining columns (1..9) filled with spaces ' '
+    assert screen.get_cell(0, 1).char == "B"
+    for x in range(1, screen.width):
+        cell = screen.get_cell(x, 1)
+        assert cell is not None
+        assert cell.char == " "
+
+    # Feed operation via ANSIParser
+    parser = ANSIParser(screen)
+    parser.feed("C\nD")
+    assert screen.height >= 3
+
+    # Newly created row 2 should also be filled with spaces
+    assert screen.get_cell(0, 2).char == "D"
+    for x in range(1, screen.width):
+        cell = screen.get_cell(x, 2)
+        assert cell is not None
+        assert cell.char == " "
+
 

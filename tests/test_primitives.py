@@ -30,7 +30,7 @@ def test_primitives_basic_composition():
     assert screen.get_cell(4, 2).char == "┼"
     assert screen.get_cell(0, 0).char == "┌"
     assert screen.get_cell(7, 3).char == "┘"
-    assert screen.get_cell(1, 1).char is None
+    assert screen.get_cell(1, 1).char == " "
 
     save_output(screen, "primitives_basic.ans")
 
@@ -41,7 +41,7 @@ def test_block_box_and_stamp():
 
     stamp = stamp_from_screen(src, transparent_chars=("█",), border_bg=clr)
 
-    assert stamp.get_cell(1, 1).char is None
+    assert stamp.get_cell(1, 1).char == " "
     c = stamp.get_cell(0, 0)
     assert c.char == " "
     assert c.bg == Color(0, 0, 0)
