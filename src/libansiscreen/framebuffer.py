@@ -696,6 +696,7 @@ class frameBuffer:
         self._pending_wrap = False
         old_height = max(1, self.height)
         self.cursor.reset()
+        self._update_graphics_cache()
         if self.use_binary:
             self._buffer.clear()
             self._allocated_rows = 0
@@ -768,8 +769,44 @@ class frameBuffer:
 
     def clear_to_end_of_screen(self) -> None:
         self.clear_to_end_of_line()
-        for y in range(self.cursor.y + 1, self.height):
-            self.clear_row(y)
+        if self.use_binary:
+            space_cp = ord(" ")
+            fg_r, fg_g, fg_b, fg_set = 0, 0, 0, False
+            if self.current_fg is not None:
+                fg_r, fg_g, fg_b, fg_set = self.current_fg.r, self.current_fg.g, self.current_fg.b, True
+
+            bg_r, bg_g, bg_b, bg_set = 0, 0, 0, False
+            if self.current_bg is not None:
+                bg_r, bg_g, bg_b, bg_set = self.current_bg.r, self.current_bg.g, self.current_bg.b, True
+
+            for y in range(self.cursor.y + 1, self.height):
+                for x in range(self.width):
+                    offset = self._cell_offset(x, y)
+                    pack_cell_fields(
+                        self._buffer,
+                        offset,
+                        codepoint_or_imgid=space_cp,
+                        fg_r=fg_r,
+                        fg_g=fg_g,
+                        fg_b=fg_b,
+                        fg_set=fg_set,
+                        bg_r=bg_r,
+                        bg_g=bg_g,
+                        bg_b=bg_b,
+                        bg_set=bg_set,
+                        attrs=self.current_attrs,
+                    )
+        else:
+            for y in range(self.cursor.y + 1, self.height):
+                self._rows[y] = [
+                    Cell(
+                        char=" ",
+                        fg=self.current_fg,
+                        bg=self.current_bg,
+                        attrs=self.current_attrs,
+                    )
+                    for _ in range(self.width)
+                ]
 
     # ------------------------------------------------------------------
     # Color Shift Utilities

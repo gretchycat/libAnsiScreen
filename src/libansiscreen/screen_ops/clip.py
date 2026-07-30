@@ -37,6 +37,10 @@ def clear(fb: frameBuffer, box: Optional[Union[Box, tuple]] = None) -> None:
     if w <= 0 or h <= 0:
         return
 
+    if x0 <= 0 and y0 <= 0 and w >= fb.width and h >= fb.height:
+        fb.cls()
+        return
+
     if fb.use_binary:
         empty_cell_bytes = bytes(CELL_SIZE)
         for dy in range(h):

@@ -173,3 +173,29 @@ def test_binary_clip_copy_cut_paste_tile():
     assert dst.get_cell(0, 0).char == "X"
     assert dst.get_cell(1, 0).char == "Y"
     assert dst.get_cell(2, 0).char == "X"
+
+
+@pytest.mark.parametrize("use_binary", [True, False])
+def test_clear_to_end_of_screen_space_fill(use_binary: bool):
+    """
+    Test that clear_to_end_of_screen fills all remaining screen cells with spaces
+    and active graphics attributes.
+    """
+    screen = Screen(width=10, height=4, use_binary=use_binary)
+    screen.put_text("0123456789\n1123456789\n2123456789\n3123456789")
+    custom_fg = Color(100, 150, 200)
+    screen.set_foreground(custom_fg)
+    screen.cursor_goto(0, 1)
+
+    screen.clear_to_end_of_screen()
+
+    # Row 0 remains untouched
+    assert screen.get_cell(0, 0).char == "0"
+    # Rows 1..3 are filled with space ' ' and active fg
+    for y in range(1, screen.height):
+        for x in range(screen.width):
+            cell = screen.get_cell(x, y)
+            assert cell is not None
+            assert cell.char == " "
+            assert cell.fg == custom_fg
+
